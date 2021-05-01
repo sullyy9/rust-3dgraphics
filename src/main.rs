@@ -1,14 +1,14 @@
-use frame::Frame;
+mod frame;
+mod shapes;
+
 use winit::{
     dpi::LogicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-use rand::Rng;
 
-mod frame;
-mod shape;
+use shapes::{cube, primitives};
 
 const RESOLUTION_WIDTH: u32 = 960;
 const RESOLUTION_HEIGHT: u32 = 720;
@@ -24,17 +24,17 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let mut frame = Frame::new(RESOLUTION_WIDTH, RESOLUTION_HEIGHT, &window);
-    frame.draw_border();
+    let mut frame = frame::Frame::new(RESOLUTION_WIDTH, RESOLUTION_HEIGHT, &window);
+    frame.clear();
 
-    let mut line = {
-        let point1 = shape::Point { x: 700, y: 50 };
-        let point2 = shape::Point { x: 100, y: 600 };
-        shape::Line::new(point1, point2)
+    let cube = {
+        let position: primitives::Point<i32> = [150, 200, 210, 1];
+        cube::Cube::new(position, 100)
     };
 
-    //frame.draw_pixel(3, 100, [0, 255, 0, 255]);
-    frame.draw_line(&line);
+    for line in cube.get_lines().iter() {
+        frame.draw_line_3d(&line);
+    }
 
     let mut redraw = false;
 
@@ -59,25 +59,9 @@ fn main() {
             }
             Event::RedrawRequested(_) => {
                 redraw = false;
-                randomize_line(&mut line);
-                frame.draw_line(&line);
                 frame.render();
             }
             _ => (),
         }
     });
-}
-
-fn randomize_line(line: &mut shape::Line) {
-    let x1 = rand::thread_rng().gen_range(3..(RESOLUTION_WIDTH-2));
-    let x2 = rand::thread_rng().gen_range(3..(RESOLUTION_WIDTH-2));
-    let y1 = rand::thread_rng().gen_range(3..(RESOLUTION_HEIGHT-2));
-    let y2 = rand::thread_rng().gen_range(3..(RESOLUTION_HEIGHT-2));
-
-    println!("Random line: ({}, {}) -> ({}, {})", x1, y1, x2, y2);
-
-    line.point1.x = x1;
-    line.point1.y = y1;
-    line.point2.x = x2;
-    line.point2.y = y2;
 }
