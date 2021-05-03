@@ -13,8 +13,10 @@ pub struct Frame {
     height: u32,
 
     // Limits of the z axis in 3d space
-    near_plane: u32,
-    far_plane: u32,
+    near_plane: f32,
+    far_plane: f32,
+
+    fov: f32,
 
     // Matrix to map 3d space to Normalized Device Coordinate (NDC) space.
     // This space is a cube where x and y coordinates are normalized between -1 and 1.
@@ -30,18 +32,21 @@ impl Frame {
             Pixels::new(width, height, surface_texture).expect("Failed to create pixel buffer")
         };
 
-        let near_plane = 1;
-        let far_plane = 1000;
+        let near_plane = 100.0;
+        let far_plane = 500.0;
+        let fov = 90.0;
 
-        let x_mul = (2.0 * near_plane as f32) / width as f32;
-        let y_mul = (2.0 * near_plane as f32) / height as f32;
-        let z_mul = far_plane as f32 / (far_plane - near_plane) as f32;
-        let z2_mul = z_mul * -1.0 * near_plane as f32;
+        let aspect_ratio = width as f32 / height as f32;
+
+        let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
+        let y_mul = 1.0 / f32::tan(fov / 2.0);
+        let z_mul = (far_plane + near_plane) / (far_plane - near_plane);
+        let w_mul = 1.0; //(2.0 * far_plane * near_plane) / (far_plane - near_plane);
         let projection_matrix = [
             [x_mul, 0.0, 0.0, 0.0],
             [0.0, y_mul, 0.0, 0.0],
-            [0.0, 0.0, z_mul, 1.0],
-            [0.0, 0.0, z2_mul, 0.0],
+            [0.0, 0.0, z_mul, w_mul],
+            [0.0, 0.0, -1.0, 0.0],
         ];
 
         Frame {
@@ -50,6 +55,7 @@ impl Frame {
             height,
             near_plane,
             far_plane,
+            fov,
             projection_matrix,
         }
     }
@@ -71,67 +77,66 @@ impl Frame {
     }
 
     /// Project a 3D line to NDC space.
-    pub fn draw_line_3d(&mut self, line_3d: &primitives::Line) {
-        // Put the z value into the w element.
-        let mut ndc_point1: primitives::Point<f32> = [
-            (line_3d.p1[0] as f32 * self.projection_matrix[0][0]),
-            (line_3d.p1[1] as f32 * self.projection_matrix[1][1]),
-            (line_3d.p1[2] as f32 * self.projection_matrix[2][2])
-                + (line_3d.p1[2] as f32 * self.projection_matrix[3][2]),
-            (line_3d.p1[2] as f32 / 200.0),
-        ];
-        let mut ndc_point2: primitives::Point<f32> = [
-            (line_3d.p2[0] as f32 * self.projection_matrix[0][0]),
-            (line_3d.p2[1] as f32 * self.projection_matrix[1][1]),
-            (line_3d.p2[2] as f32 * self.projection_matrix[2][2])
-                + (line_3d.p2[2] as f32 * self.projection_matrix[3][2]),
-            (line_3d.p2[2] as f32 / 200.0),
-        ];
+    pub fn draw_line_3d(&mut self, line_camera_space: &primitives::Line) {
+        // Convert the line from camera space to NDC space.
+        let mut line_ndc_space = primitives::Line(
+            line_camera_space.0.transform(&self.projection_matrix),
+            line_camera_space.1.transform(&self.projection_matrix),
+        );
 
-        ndc_point1[0] = ndc_point1[0] / ndc_point1[3];
-        ndc_point1[1] = ndc_point1[1] / ndc_point1[3];
-        ndc_point1[2] = ndc_point1[2] / ndc_point1[3];
+        // line_ndc_space.0 .3 = line_ndc_space.0 .3 / 200.0;
+        // line_ndc_space.1 .3 = line_ndc_space.1 .3 / 200.0;
 
-        ndc_point2[0] = ndc_point2[0] / ndc_point2[3];
-        ndc_point2[1] = ndc_point2[1] / ndc_point2[3];
-        ndc_point2[2] = ndc_point2[2] / ndc_point2[3];
+        line_ndc_space.0 .0 = line_ndc_space.0 .0 / line_ndc_space.0 .3;
+        line_ndc_space.0 .1 = line_ndc_space.0 .1 / line_ndc_space.0 .3;
+        line_ndc_space.0 .2 = line_ndc_space.0 .2 / line_ndc_space.0 .3;
+        line_ndc_space.0 .3 = line_ndc_space.0 .3 / line_ndc_space.0 .3;
 
-        let line_2d = {
-            let point1: primitives::Point<i32> = [
-                (ndc_point1[0] * self.width as f32) as i32,
-                (ndc_point1[1] * self.height as f32) as i32,
-                0,
-                1,
-            ];
-            let point2: primitives::Point<i32> = [
-                (ndc_point2[0] * self.width as f32) as i32,
-                (ndc_point2[1] * self.height as f32) as i32,
-                0,
-                1,
-            ];
-            primitives::Line::new(point1, point2)
-        };
+        line_ndc_space.1 .0 = line_ndc_space.1 .0 / line_ndc_space.1 .3;
+        line_ndc_space.1 .1 = line_ndc_space.1 .1 / line_ndc_space.1 .3;
+        line_ndc_space.1 .2 = line_ndc_space.1 .2 / line_ndc_space.1 .3;
+        line_ndc_space.1 .3 = line_ndc_space.1 .3 / line_ndc_space.1 .3;
+
+        // Convert from NDC space to screen space
+        let line_screen_space = primitives::Line(
+            primitives::Point(
+                ((line_ndc_space.0 .0 + 1.0) / 2.0) * self.width as f32,
+                ((line_ndc_space.0 .1 + 1.0) / 2.0) * self.height as f32,
+                0.0,
+                1.0,
+            ),
+            primitives::Point(
+                ((line_ndc_space.1 .0 + 1.0) / 2.0) * self.width as f32,
+                ((line_ndc_space.1 .1 + 1.0) / 2.0) * self.height as f32,
+                0.0,
+                1.0,
+            ),
+        );
+
         println!(
             "3d p1x: {}, p1y: {}, p1z: {}, p2x: {}, p2y: {}, p2z: {},",
-            line_3d.p1[0],
-            line_3d.p1[1],
-            line_3d.p1[2],
-            line_3d.p2[0],
-            line_3d.p2[1],
-            line_3d.p2[2]
+            line_camera_space.0 .0,
+            line_camera_space.0 .1,
+            line_camera_space.0 .2,
+            line_camera_space.1 .0,
+            line_camera_space.1 .1,
+            line_camera_space.1 .2
         );
         println!(
             "2d p1x: {}, p1y: {}, p2x: {}, p2y: {}",
-            line_2d.p1[0], line_2d.p1[1], line_2d.p2[0], line_2d.p2[1]
+            line_screen_space.0 .0,
+            line_screen_space.0 .1,
+            line_screen_space.1 .0,
+            line_screen_space.1 .1
         );
         println!("");
-        self.draw_line_2d(&line_2d);
+        self.draw_line_2d(&line_screen_space);
     }
 
     /// Draw a line using Bresenham's algorithm.
     pub fn draw_line_2d(&mut self, line: &primitives::Line) {
-        let (x1, y1) = (line.p1[0], line.p1[1]);
-        let (x2, y2) = (line.p2[0], line.p2[1]);
+        let (x1, y1) = (line.0 .0 as i32, line.0 .1 as i32);
+        let (x2, y2) = (line.1 .0 as i32, line.1 .1 as i32);
 
         let mut dx = (x2 - x1).abs();
         let mut dy = (y2 - y1).abs();
@@ -141,8 +146,8 @@ impl Frame {
             // Increment through the X axis but make sure we're incrementing not decrementing.
             // Swap the points if necessary and recalculate dx and dy.
             if x1 > x2 {
-                let (x1, y1) = (line.p2[0], line.p2[1]);
-                let (x2, y2) = (line.p1[0], line.p1[1]);
+                let (x1, y1) = (line.1 .0 as i32, line.1 .1 as i32);
+                let (x2, y2) = (line.0 .0 as i32, line.0 .1 as i32);
                 dx = (x2 - x1).abs();
                 dy = (y2 - y1).abs();
             }
@@ -168,8 +173,8 @@ impl Frame {
             // Increment through the Y axis but make sure we're incrementing not decrementing.
             // Swap the points if necessary and recalculate dx and dy.
             if y1 > y2 {
-                let (x1, y1) = (line.p2[0], line.p2[1]);
-                let (x2, y2) = (line.p1[0], line.p1[1]);
+                let (x1, y1) = (line.1 .0 as i32, line.1 .1 as i32);
+                let (x2, y2) = (line.0 .0 as i32, line.0 .1 as i32);
                 dx = (x2 - x1).abs();
                 dy = (y2 - y1).abs();
             }

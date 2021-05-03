@@ -1,39 +1,55 @@
-// #[derive(Copy, Clone)]
-// pub struct Point {
-//     pub x: u32,
-//     pub y: u32,
-//     pub z: u32,
-//     pub w: u32,
-// }
-
-pub type Point<T> = [T; 4];
-
 #[derive(Copy, Clone)]
-pub struct Line {
-    pub p1: Point<i32>,
-    pub p2: Point<i32>,
-}
-impl Line {
-    pub fn new(p1: Point<i32>, p2: Point<i32>) -> Line {
-        Line { p1, p2 }
+pub struct Point(pub f32, pub f32, pub f32, pub f32);
+impl Point {
+    /// Transform the point using a transformation matrix.
+    pub fn transform(self, array: &[[f32; 4]; 4]) -> Point {
+        Point(
+            self.0 * array[0][0]
+                + self.1 * array[1][0]
+                + self.2 * array[2][0]
+                + self.3 * array[3][0],
+            self.0 * array[0][1]
+                + self.1 * array[1][1]
+                + self.2 * array[2][1]
+                + self.3 * array[3][1],
+            self.0 * array[0][2]
+                + self.1 * array[1][2]
+                + self.2 * array[2][2]
+                + self.3 * array[3][2],
+            self.0 * array[0][3]
+                + self.1 * array[1][3]
+                + self.2 * array[2][3]
+                + self.3 * array[3][3],
+        )
     }
 }
 
-pub struct Triangle {
-    pub points: [Point<i32>; 3],
+#[derive(Copy, Clone)]
+pub struct Line(pub Point, pub Point);
+impl Line {
+    pub fn new(point1: &Point, point2: &Point) -> Line {
+        Line(
+            Point(point1.0, point1.1, point1.2, point1.3),
+            Point(point2.0, point2.1, point2.2, point2.3),
+        )
+    }
 }
+
+pub struct Triangle(pub Point, pub Point, pub Point);
 impl Triangle {
-    pub fn new(point1: Point<i32>, point2: Point<i32>, point3: Point<i32>) -> Triangle {
-        Triangle {
-            points: [point1, point2, point3],
-        }
+    pub fn new(point1: &Point, point2: &Point, point3: &Point) -> Triangle {
+        Triangle(
+            Point(point1.0, point1.1, point1.2, point1.3),
+            Point(point2.0, point2.1, point2.2, point2.3),
+            Point(point3.0, point3.1, point3.2, point3.3),
+        )
     }
 
     pub fn get_lines(&self) -> [Line; 3] {
         [
-            Line::new(self.points[0], self.points[1]),
-            Line::new(self.points[1], self.points[2]),
-            Line::new(self.points[2], self.points[0]),
+            Line::new(&self.0, &self.1),
+            Line::new(&self.1, &self.2),
+            Line::new(&self.2, &self.0),
         ]
     }
 }

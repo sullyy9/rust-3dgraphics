@@ -28,7 +28,7 @@ fn main() {
     frame.clear();
 
     let cube = {
-        let position: primitives::Point<i32> = [150, 200, 210, 1];
+        let position = primitives::Point(100.0, 0.0, 210.0, 1.0);
         cube::Cube::new(position, 100)
     };
 
