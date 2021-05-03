@@ -40,13 +40,13 @@ impl Frame {
 
         let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
         let y_mul = 1.0 / f32::tan(fov / 2.0);
-        let z_mul = (far_plane + near_plane) / (far_plane - near_plane);
-        let w_mul = 1.0; //(2.0 * far_plane * near_plane) / (far_plane - near_plane);
+        let z1_mul = far_plane / (far_plane - near_plane);
+        let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
         let projection_matrix = [
             [x_mul, 0.0, 0.0, 0.0],
             [0.0, y_mul, 0.0, 0.0],
-            [0.0, 0.0, z_mul, w_mul],
-            [0.0, 0.0, -1.0, 0.0],
+            [0.0, 0.0, z1_mul, 1.0],
+            [0.0, 0.0, z2_mul, 0.0],
         ];
 
         Frame {
@@ -80,12 +80,13 @@ impl Frame {
     pub fn draw_line_3d(&mut self, line_camera_space: &primitives::Line) {
         // Convert the line from camera space to NDC space.
         let mut line_ndc_space = primitives::Line(
-            line_camera_space.0.transform(&self.projection_matrix),
-            line_camera_space.1.transform(&self.projection_matrix),
+            line_camera_space
+                .0
+                .transform_to_copy(&self.projection_matrix),
+            line_camera_space
+                .1
+                .transform_to_copy(&self.projection_matrix),
         );
-
-        // line_ndc_space.0 .3 = line_ndc_space.0 .3 / 200.0;
-        // line_ndc_space.1 .3 = line_ndc_space.1 .3 / 200.0;
 
         line_ndc_space.0 .0 = line_ndc_space.0 .0 / line_ndc_space.0 .3;
         line_ndc_space.0 .1 = line_ndc_space.0 .1 / line_ndc_space.0 .3;
@@ -97,40 +98,37 @@ impl Frame {
         line_ndc_space.1 .2 = line_ndc_space.1 .2 / line_ndc_space.1 .3;
         line_ndc_space.1 .3 = line_ndc_space.1 .3 / line_ndc_space.1 .3;
 
-        // Convert from NDC space to screen space
-        let line_screen_space = primitives::Line(
-            primitives::Point(
-                ((line_ndc_space.0 .0 + 1.0) / 2.0) * self.width as f32,
-                ((line_ndc_space.0 .1 + 1.0) / 2.0) * self.height as f32,
-                0.0,
-                1.0,
-            ),
-            primitives::Point(
-                ((line_ndc_space.1 .0 + 1.0) / 2.0) * self.width as f32,
-                ((line_ndc_space.1 .1 + 1.0) / 2.0) * self.height as f32,
-                0.0,
-                1.0,
-            ),
-        );
+        if line_ndc_space.0 .0 > -1.0
+            && line_ndc_space.0 .0 < 1.0
+            && line_ndc_space.0 .1 > -1.0
+            && line_ndc_space.0 .1 < 1.0
+            && line_ndc_space.0 .2 > -1.0
+            && line_ndc_space.0 .2 < 1.0
+            && line_ndc_space.1 .0 > -1.0
+            && line_ndc_space.1 .0 < 1.0
+            && line_ndc_space.1 .1 > -1.0
+            && line_ndc_space.1 .1 < 1.0
+            && line_ndc_space.1 .2 > -1.0
+            && line_ndc_space.1 .2 < 1.0
+        {
+            // Convert from NDC space to screen space
+            let line_screen_space = primitives::Line(
+                primitives::Point(
+                    ((line_ndc_space.0 .0 + 1.0) / 2.0) * self.width as f32,
+                    ((line_ndc_space.0 .1 + 1.0) / 2.0) * self.height as f32,
+                    0.0,
+                    1.0,
+                ),
+                primitives::Point(
+                    ((line_ndc_space.1 .0 + 1.0) / 2.0) * self.width as f32,
+                    ((line_ndc_space.1 .1 + 1.0) / 2.0) * self.height as f32,
+                    0.0,
+                    1.0,
+                ),
+            );
 
-        println!(
-            "3d p1x: {}, p1y: {}, p1z: {}, p2x: {}, p2y: {}, p2z: {},",
-            line_camera_space.0 .0,
-            line_camera_space.0 .1,
-            line_camera_space.0 .2,
-            line_camera_space.1 .0,
-            line_camera_space.1 .1,
-            line_camera_space.1 .2
-        );
-        println!(
-            "2d p1x: {}, p1y: {}, p2x: {}, p2y: {}",
-            line_screen_space.0 .0,
-            line_screen_space.0 .1,
-            line_screen_space.1 .0,
-            line_screen_space.1 .1
-        );
-        println!("");
-        self.draw_line_2d(&line_screen_space);
+            self.draw_line_2d(&line_screen_space);
+        }
     }
 
     /// Draw a line using Bresenham's algorithm.

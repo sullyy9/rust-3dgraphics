@@ -1,8 +1,8 @@
 #[derive(Copy, Clone)]
 pub struct Point(pub f32, pub f32, pub f32, pub f32);
 impl Point {
-    /// Transform the point using a transformation matrix.
-    pub fn transform(self, array: &[[f32; 4]; 4]) -> Point {
+    /// Perform a transformation with the point using a transformation matrix and return the result.
+    pub fn transform_to_copy(&self, array: &[[f32; 4]; 4]) -> Point {
         Point(
             self.0 * array[0][0]
                 + self.1 * array[1][0]
@@ -20,6 +20,29 @@ impl Point {
                 + self.1 * array[1][3]
                 + self.2 * array[2][3]
                 + self.3 * array[3][3],
+        )
+    }
+
+    /// Perform a transformation on the point using a transformation matrix.
+    pub fn transform(&mut self, array: &[[f32; 4]; 4]) {
+        let old_self = *self;
+        *self = Point(
+            old_self.0 * array[0][0]
+                + old_self.1 * array[1][0]
+                + old_self.2 * array[2][0]
+                + old_self.3 * array[3][0],
+            old_self.0 * array[0][1]
+                + old_self.1 * array[1][1]
+                + old_self.2 * array[2][1]
+                + old_self.3 * array[3][1],
+            old_self.0 * array[0][2]
+                + old_self.1 * array[1][2]
+                + old_self.2 * array[2][2]
+                + old_self.3 * array[3][2],
+            old_self.0 * array[0][3]
+                + old_self.1 * array[1][3]
+                + old_self.2 * array[2][3]
+                + old_self.3 * array[3][3],
         )
     }
 }

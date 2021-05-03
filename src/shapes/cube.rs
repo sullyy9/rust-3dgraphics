@@ -135,4 +135,29 @@ impl Cube {
             self.cube[11].get_lines()[2],
         ]
     }
+
+    pub fn translate(&mut self, position: &primitives::Point) {
+        let diff_x = position.0 - self.position.0;
+        let diff_y = position.1 - self.position.1;
+        let diff_z = position.2 - self.position.2;
+
+        // Generate the translation matrix
+        let translation_matrix = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [diff_x, diff_y, diff_z, 1.0],
+        ];
+
+        // Apply the translation matrix for every point
+        for triangle in self.cube.iter_mut() {
+            triangle.0.transform(&translation_matrix);
+            triangle.1.transform(&translation_matrix);
+            triangle.2.transform(&translation_matrix);
+        }
+
+        self.position.0 = position.0;
+        self.position.1 = position.1;
+        self.position.2 = position.2;
+    }
 }
