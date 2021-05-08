@@ -1,163 +1,95 @@
-use crate::primitives;
+use crate::shapes::primitives::{TransformMatrix, Triangle, Vertex};
 pub struct Cube {
-    pub cube: [primitives::Triangle; 12],
-    pub position: primitives::Point,
-    pub vertex_length: u32,
+    pub faces: [Triangle; 12],
+    pub edge_length: f32,
+    pub position: Vertex,
+    pub orientation: Vertex,
 }
 impl Cube {
     /// Create a new cube.
-    pub fn new(position: primitives::Point, vertex_length: u32) -> Cube {
-        // Calculate the position offset of each point given the required centre position with
-        // vertex length applied
-        let vertex_length = vertex_length as f32;
-        let point_offset = primitives::Point(
-            position.0 - (vertex_length / 2.0),
-            position.1 - (vertex_length / 2.0),
-            position.2 - (vertex_length / 2.0),
-            position.3,
-        );
+    pub fn new(edge_length: f32, position: Vertex, orientation: Vertex) -> Cube {
+        // Create the verticies of the cube with the centre at the origin. Make sure w is 1.
+        let vertex_pos = edge_length / 2.0;
+        let vertex_neg = -edge_length / 2.0;
 
-        // define the cube points. South is towards the screen
-        let north_west_bottom = primitives::Point(
-            (0.0 * vertex_length) + point_offset.0,
-            (0.0 * vertex_length) + point_offset.1,
-            (1.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let north_east_bottom = primitives::Point(
-            (1.0 * vertex_length) + point_offset.0,
-            (0.0 * vertex_length) + point_offset.1,
-            (1.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let south_west_bottom = primitives::Point(
-            (0.0 * vertex_length) + point_offset.0,
-            (0.0 * vertex_length) + point_offset.1,
-            (0.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let south_east_bottom = primitives::Point(
-            (1.0 * vertex_length) + point_offset.0,
-            (0.0 * vertex_length) + point_offset.1,
-            (0.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
+        let north_west_bottom = Vertex::new(vertex_neg, vertex_neg, vertex_pos, 0.0);
+        let north_east_bottom = Vertex::new(vertex_pos, vertex_neg, vertex_pos, 0.0);
+        let south_west_bottom = Vertex::new(vertex_neg, vertex_neg, vertex_neg, 0.0);
+        let south_east_bottom = Vertex::new(vertex_pos, vertex_neg, vertex_neg, 0.0);
 
-        let north_west_top = primitives::Point(
-            (0.0 * vertex_length) + point_offset.0,
-            (1.0 * vertex_length) + point_offset.1,
-            (1.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let north_east_top = primitives::Point(
-            (1.0 * vertex_length) + point_offset.0,
-            (1.0 * vertex_length) + point_offset.1,
-            (1.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let south_west_top = primitives::Point(
-            (0.0 * vertex_length) + point_offset.0,
-            (1.0 * vertex_length) + point_offset.1,
-            (0.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
-        let south_east_top = primitives::Point(
-            (1.0 * vertex_length) + point_offset.0,
-            (1.0 * vertex_length) + point_offset.1,
-            (0.0 * vertex_length) + point_offset.2,
-            point_offset.3,
-        );
+        let north_west_top = Vertex::new(vertex_neg, vertex_pos, vertex_pos, 0.0);
+        let north_east_top = Vertex::new(vertex_pos, vertex_pos, vertex_pos, 0.0);
+        let south_west_top = Vertex::new(vertex_neg, vertex_pos, vertex_neg, 0.0);
+        let south_east_top = Vertex::new(vertex_pos, vertex_pos, vertex_neg, 0.0);
 
-        let vertex_length = vertex_length as u32;
+        // Construct the cube from triangles
         Cube {
-            cube: [
+            faces: [
                 // South face
-                primitives::Triangle::new(&south_west_bottom, &south_west_top, &south_east_top),
-                primitives::Triangle::new(&south_west_bottom, &south_east_top, &south_east_bottom),
+                Triangle::new(south_west_bottom, south_west_top, south_east_top),
+                Triangle::new(south_west_bottom, south_east_top, south_east_bottom),
                 // East face
-                primitives::Triangle::new(&south_east_bottom, &south_east_top, &north_east_top),
-                primitives::Triangle::new(&south_east_bottom, &north_east_top, &north_east_bottom),
+                Triangle::new(south_east_bottom, south_east_top, north_east_top),
+                Triangle::new(south_east_bottom, north_east_top, north_east_bottom),
                 // North face
-                primitives::Triangle::new(&north_east_bottom, &north_east_top, &north_west_top),
-                primitives::Triangle::new(&north_east_bottom, &north_west_top, &north_west_bottom),
+                Triangle::new(north_east_bottom, north_east_top, north_west_top),
+                Triangle::new(north_east_bottom, north_west_top, north_west_bottom),
                 // West face
-                primitives::Triangle::new(&north_west_bottom, &north_west_top, &south_west_top),
-                primitives::Triangle::new(&north_west_bottom, &south_west_top, &south_west_bottom),
+                Triangle::new(north_west_bottom, north_west_top, south_west_top),
+                Triangle::new(north_west_bottom, south_west_top, south_west_bottom),
                 // Top face
-                primitives::Triangle::new(&south_west_top, &north_west_top, &north_east_top),
-                primitives::Triangle::new(&south_west_top, &north_east_top, &south_east_top),
+                Triangle::new(south_west_top, north_west_top, north_east_top),
+                Triangle::new(south_west_top, north_east_top, south_east_top),
                 // Bottom Face
-                primitives::Triangle::new(&north_west_bottom, &south_west_bottom, &south_east_bottom),
-                primitives::Triangle::new(&north_west_bottom, &south_east_bottom, &north_east_bottom),
+                Triangle::new(north_west_bottom, south_west_bottom, south_east_bottom),
+                Triangle::new(north_west_bottom, south_east_bottom, north_east_bottom),
             ],
             position,
-            vertex_length,
+            edge_length,
+            orientation,
         }
     }
 
-    pub fn get_lines(&self) -> [primitives::Line; 36] {
-        [
-            self.cube[0].get_lines()[0],
-            self.cube[0].get_lines()[1],
-            self.cube[0].get_lines()[2],
-            self.cube[1].get_lines()[0],
-            self.cube[1].get_lines()[1],
-            self.cube[1].get_lines()[2],
-            self.cube[2].get_lines()[0],
-            self.cube[2].get_lines()[1],
-            self.cube[2].get_lines()[2],
-            self.cube[3].get_lines()[0],
-            self.cube[3].get_lines()[1],
-            self.cube[3].get_lines()[2],
-            self.cube[4].get_lines()[0],
-            self.cube[4].get_lines()[1],
-            self.cube[4].get_lines()[2],
-            self.cube[5].get_lines()[0],
-            self.cube[5].get_lines()[1],
-            self.cube[5].get_lines()[2],
-            self.cube[6].get_lines()[0],
-            self.cube[6].get_lines()[1],
-            self.cube[6].get_lines()[2],
-            self.cube[7].get_lines()[0],
-            self.cube[7].get_lines()[1],
-            self.cube[7].get_lines()[2],
-            self.cube[8].get_lines()[0],
-            self.cube[8].get_lines()[1],
-            self.cube[8].get_lines()[2],
-            self.cube[9].get_lines()[0],
-            self.cube[9].get_lines()[1],
-            self.cube[9].get_lines()[2],
-            self.cube[10].get_lines()[0],
-            self.cube[10].get_lines()[1],
-            self.cube[10].get_lines()[2],
-            self.cube[11].get_lines()[0],
-            self.cube[11].get_lines()[1],
-            self.cube[11].get_lines()[2],
-        ]
-    }
+    /// Perform a rotation transformation given the desired orientation
+    pub fn rotate(&mut self, orientation: Vertex) {
+        let pi = std::f32::consts::PI;
+        let x_rotation = (orientation.x - self.orientation.x) * (pi / 180.0);
+        let y_rotation = (orientation.y - self.orientation.y) * (pi / 180.0);
+        let z_rotation = (orientation.z - self.orientation.z) * (pi / 180.0);
+        self.orientation = orientation;
 
-    pub fn translate(&mut self, position: &primitives::Point) {
-        let diff_x = position.0 - self.position.0;
-        let diff_y = position.1 - self.position.1;
-        let diff_z = position.2 - self.position.2;
+        let sin_x = f32::sin(x_rotation);
+        let cos_x = f32::cos(x_rotation);
+        let sin_y = f32::sin(y_rotation);
+        let cos_y = f32::cos(y_rotation);
+        let sin_z = f32::sin(z_rotation);
+        let cos_z = f32::cos(z_rotation);
 
-        // Generate the translation matrix
-        let translation_matrix = [
+        let x_rot_matrix = TransformMatrix([
             [1.0, 0.0, 0.0, 0.0],
+            [0.0, cos_x, -sin_x, 0.0],
+            [0.0, sin_x, cos_x, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let y_rot_matrix = TransformMatrix([
+            [cos_y, 0.0, sin_y, 0.0],
             [0.0, 1.0, 0.0, 0.0],
+            [-sin_y, 0.0, cos_y, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let z_rot_matrix = TransformMatrix([
+            [cos_z, -sin_z, 0.0, 0.0],
+            [sin_z, cos_z, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-            [diff_x, diff_y, diff_z, 1.0],
-        ];
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
 
-        // Apply the translation matrix for every point
-        for triangle in self.cube.iter_mut() {
-            triangle.0.transform(&translation_matrix);
-            triangle.1.transform(&translation_matrix);
-            triangle.2.transform(&translation_matrix);
+        let combined_matrix = z_rot_matrix * y_rot_matrix * x_rot_matrix;
+
+        for face in self.faces.iter_mut() {
+            face.p1 = face.p1 * combined_matrix;
+            face.p2 = face.p2 * combined_matrix;
+            face.p3 = face.p3 * combined_matrix;
         }
-
-        self.position.0 = position.0;
-        self.position.1 = position.1;
-        self.position.2 = position.2;
     }
 }
