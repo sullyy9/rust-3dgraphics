@@ -1,6 +1,8 @@
-use crate::shapes::primitives::{TransformMatrix, Triangle, Vertex};
+use crate::shapes::primitives::{TransformationMatrix, Triangle, Vertex};
+
+#[derive(Copy, Clone)]
 pub struct Cube {
-    pub faces: [Triangle; 12],
+    pub polygons: [Triangle; 12],
     pub edge_length: f32,
     pub position: Vertex,
     pub orientation: Vertex,
@@ -24,7 +26,7 @@ impl Cube {
 
         // Construct the cube from triangles
         Cube {
-            faces: [
+            polygons: [
                 // South face
                 Triangle::new(south_west_bottom, south_west_top, south_east_top),
                 Triangle::new(south_west_bottom, south_east_top, south_east_bottom),
@@ -65,19 +67,19 @@ impl Cube {
         let sin_z = f32::sin(z_rotation);
         let cos_z = f32::cos(z_rotation);
 
-        let x_rot_matrix = TransformMatrix([
+        let x_rot_matrix = TransformationMatrix([
             [1.0, 0.0, 0.0, 0.0],
             [0.0, cos_x, -sin_x, 0.0],
             [0.0, sin_x, cos_x, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
-        let y_rot_matrix = TransformMatrix([
+        let y_rot_matrix = TransformationMatrix([
             [cos_y, 0.0, sin_y, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [-sin_y, 0.0, cos_y, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
-        let z_rot_matrix = TransformMatrix([
+        let z_rot_matrix = TransformationMatrix([
             [cos_z, -sin_z, 0.0, 0.0],
             [sin_z, cos_z, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
@@ -86,7 +88,7 @@ impl Cube {
 
         let combined_matrix = z_rot_matrix * y_rot_matrix * x_rot_matrix;
 
-        for face in self.faces.iter_mut() {
+        for face in self.polygons.iter_mut() {
             face.p1 = face.p1 * combined_matrix;
             face.p2 = face.p2 * combined_matrix;
             face.p3 = face.p3 * combined_matrix;

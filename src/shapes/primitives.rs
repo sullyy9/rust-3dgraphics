@@ -1,5 +1,8 @@
 use std::ops::Index;
 
+///////////////////////////////////////////////////////////////////////////////
+// Vertex                                                                    //
+///////////////////////////////////////////////////////////////////////////////
 #[derive(Copy, Clone)]
 pub struct Vertex {
     pub x: f32,
@@ -76,36 +79,24 @@ impl std::ops::Div<f32> for Vertex {
         }
     }
 }
-// Implement matrix multiplication for Vertex's.
-impl std::ops::Mul<[[f32; 4]; 4]> for Vertex {
+// Implement element wise multiplication for Vertex's.
+impl std::ops::Mul<f32> for Vertex {
     type Output = Vertex;
 
-    fn mul(self, matrix: [[f32; 4]; 4]) -> Self::Output {
+    fn mul(self, scalar: f32) -> Self::Output {
         Vertex {
-            x: self.x * matrix[0][0]
-                + self.y * matrix[1][0]
-                + self.z * matrix[2][0]
-                + self.w * matrix[3][0],
-            y: self.x * matrix[0][1]
-                + self.y * matrix[1][1]
-                + self.z * matrix[2][1]
-                + self.w * matrix[3][1],
-            z: self.x * matrix[0][2]
-                + self.y * matrix[1][2]
-                + self.z * matrix[2][2]
-                + self.w * matrix[3][2],
-            w: self.x * matrix[0][3]
-                + self.y * matrix[1][3]
-                + self.z * matrix[2][3]
-                + self.w * matrix[3][3],
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+            w: self.w * scalar,
         }
     }
 }
 // Implement matrix multiplication for Vertex's.
-impl std::ops::Mul<TransformMatrix> for Vertex {
+impl std::ops::Mul<TransformationMatrix> for Vertex {
     type Output = Vertex;
 
-    fn mul(self, matrix: TransformMatrix) -> Self::Output {
+    fn mul(self, matrix: TransformationMatrix) -> Self::Output {
         Vertex {
             x: self.x * matrix.0[0][0]
                 + self.y * matrix.0[1][0]
@@ -127,13 +118,16 @@ impl std::ops::Mul<TransformMatrix> for Vertex {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Transformation Matrix                                                     //
+///////////////////////////////////////////////////////////////////////////////
 #[derive(Copy, Clone)]
-pub struct TransformMatrix(pub [[f32; 4]; 4]);
-impl std::ops::Mul<TransformMatrix> for TransformMatrix {
-    type Output = TransformMatrix;
+pub struct TransformationMatrix(pub [[f32; 4]; 4]);
+impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
+    type Output = TransformationMatrix;
 
-    fn mul(self, matrix: TransformMatrix) -> Self::Output {
-        TransformMatrix([
+    fn mul(self, matrix: TransformationMatrix) -> Self::Output {
+        TransformationMatrix([
             [
                 self.0[0][0] * matrix.0[0][0]
                     + self.0[0][1] * matrix.0[1][0]
@@ -210,6 +204,10 @@ impl std::ops::Mul<TransformMatrix> for TransformMatrix {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Line                                                                      //
+///////////////////////////////////////////////////////////////////////////////
+#[derive(Copy, Clone)]
 pub struct Line(pub [Vertex; 2]);
 impl Index<usize> for Line {
     type Output = Vertex;
@@ -223,19 +221,17 @@ impl std::ops::IndexMut<usize> for Line {
         &mut self.0[index]
     }
 }
-impl Line {
-    /// Transform both points by the matrix
-    pub fn transform(&self, matrix: &[[f32; 4]; 4]) -> Line {
-        Line([self[0] * (*matrix), self[1] * (*matrix)])
-    }
-}
 
+///////////////////////////////////////////////////////////////////////////////
+// Triangle                                                                  //
+///////////////////////////////////////////////////////////////////////////////
+#[derive(Copy, Clone)]
 pub struct Triangle {
     pub p1: Vertex,
     pub p2: Vertex,
     pub p3: Vertex,
 
-    pub lines: [Line; 3],
+    // pub lines: [Line; 3],
 }
 impl Triangle {
     pub fn new(p1: Vertex, p2: Vertex, p3: Vertex) -> Triangle {
@@ -243,16 +239,7 @@ impl Triangle {
             p1,
             p2,
             p3,
-            lines: [Line([p1, p2]), Line([p2, p3]), Line([p3, p1])],
+            // lines: [Line([p1, p2]), Line([p2, p3]), Line([p3, p1])],
         }
-    }
-
-    /// Generate an array of 3 lines that connect the vertex's
-    pub fn get_lines(&self) -> [Line; 3] {
-        [
-            Line([self.p1, self.p2]),
-            Line([self.p2, self.p3]),
-            Line([self.p3, self.p1]),
-        ]
     }
 }

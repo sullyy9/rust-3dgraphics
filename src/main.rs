@@ -1,9 +1,10 @@
 mod shapes;
 mod window;
+mod pipeline;
 
 use crate::shapes::{
     cube,
-    primitives::{Line, Vertex},
+    primitives::{Vertex},
 };
 use std::time;
 use window::GraphicsWindow;
@@ -59,33 +60,28 @@ fn main() {
             Event::RedrawRequested(_) => {
                 window.clear();
 
+                // Adjust cube position
+                if cube_position.x.abs() > 200.0 {
+                    move_right = !move_right;
+                }
                 if move_right == true {
                     cube_position.x = cube_position.x + 2.0;
-                    if cube_position.x > 200.0 {
-                        move_right = false;
-                    }
                 } else {
                     cube_position.x = cube_position.x - 2.0;
-                    if cube_position.x < -200.0 {
-                        move_right = true;
-                    }
                 }
 
+                if cube_position.y.abs() > 150.0 {
+                    move_up = !move_up;
+                }
                 if move_up == true {
                     cube_position.y = cube_position.y + 2.0;
-                    if cube_position.y > 150.0 {
-                        move_up = false;
-                    }
                 } else {
                     cube_position.y = cube_position.y - 2.0;
-                    if cube_position.y < -150.0 {
-                        move_up = true;
-                    }
                 }
 
                 if move_back == true {
                     cube_position.z = cube_position.z + 2.0;
-                    if cube_position.z > 800.0 {
+                    if cube_position.z > 300.0 {
                         move_back = false;
                     }
                 } else {
@@ -95,22 +91,33 @@ fn main() {
                     }
                 }
 
-                cube_orientation = cube_orientation + 1.0;
+                // Adjust cube orientation
+                cube_orientation.x = cube_orientation.x + 1.0;
+                cube_orientation.y = cube_orientation.y + 1.2;
+                cube_orientation.z = cube_orientation.z + 0.8;
                 if cube_orientation.x > 180.0 {
-                    cube_orientation = Vertex::new(-180.0, -180.0, -180.0, 1.0);
+                    cube_orientation.x = -180.0;
+                }
+                if cube_orientation.y > 180.0 {
+                    cube_orientation.y = -180.0;
+                }
+                if cube_orientation.z > 180.0 {
+                    cube_orientation.z = -180.0;
                 }
                 cube_orientation.w = 1.0;
 
+                // Transform the cube
+                cube_position = Vertex::new(0.0, 0.0, 200.0, 1.0);
                 cube.position = cube_position;
                 cube.rotate(cube_orientation);
 
-                for face in cube.faces.iter() {
-                    for line in face.get_lines().iter() {
-                        window.draw_line_3d(&Line([
-                            line[0] + cube.position,
-                            line[1] + cube.position,
-                        ]));
-                    }
+                // Run through the pipeline
+                let cube_ndc_space = pipeline::project_to_ndc_space(cube, &window.projection_matrix);
+                let draw_polygons = pipeline::get_polygons_to_draw(&cube_ndc_space, &window.size);
+                
+                for polygon in draw_polygons.iter() {
+                    let (edge_matrix, y_offset) = pipeline::rasterize_polygon(*polygon, &window.size);
+                    window.draw_polygon(&edge_matrix, y_offset as u32, window::DrawType::Both);
                 }
 
                 window.render();
