@@ -1,5 +1,6 @@
 FROM rust:1.51
 RUN apt update
+RUN apt upgrade
 
 # Install cross compilation tools
 RUN rustup target add x86_64-pc-windows-gnu
@@ -11,4 +12,4 @@ RUN rustup component add rustfmt
 RUN curl -L https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-linux -o /usr/bin/rust-analyzer
 RUN chmod 755 /usr/bin/rust-analyzer
 
-RUN apt -y install g++ pkg-config libx11-dev libudev-dev build-essential
+RUN apt -y install g++ pkg-config

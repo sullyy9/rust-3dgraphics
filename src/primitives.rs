@@ -1,5 +1,3 @@
-use std::ops::Index;
-
 ///////////////////////////////////////////////////////////////////////////////
 // Vertex                                                                    //
 ///////////////////////////////////////////////////////////////////////////////
@@ -10,6 +8,7 @@ pub struct Vertex {
     pub z: f32,
     pub w: f32,
 }
+pub type Vector = Vertex;
 impl Vertex {
     /// Create a new Vertex from coordinates
     pub fn new(x: f32, y: f32, z: f32, w: f32) -> Vertex {
@@ -93,10 +92,10 @@ impl std::ops::Mul<f32> for Vertex {
     }
 }
 // Implement matrix multiplication for Vertex's.
-impl std::ops::Mul<TransformationMatrix> for Vertex {
+impl std::ops::Mul<TransformMatrix> for Vertex {
     type Output = Vertex;
 
-    fn mul(self, matrix: TransformationMatrix) -> Self::Output {
+    fn mul(self, matrix: TransformMatrix) -> Self::Output {
         Vertex {
             x: self.x * matrix.0[0][0]
                 + self.y * matrix.0[1][0]
@@ -122,12 +121,12 @@ impl std::ops::Mul<TransformationMatrix> for Vertex {
 // Transformation Matrix                                                     //
 ///////////////////////////////////////////////////////////////////////////////
 #[derive(Copy, Clone)]
-pub struct TransformationMatrix(pub [[f32; 4]; 4]);
-impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
-    type Output = TransformationMatrix;
+pub struct TransformMatrix(pub [[f32; 4]; 4]);
+impl std::ops::Mul<TransformMatrix> for TransformMatrix {
+    type Output = TransformMatrix;
 
-    fn mul(self, matrix: TransformationMatrix) -> Self::Output {
-        TransformationMatrix([
+    fn mul(self, matrix: TransformMatrix) -> Self::Output {
+        TransformMatrix([
             [
                 self.0[0][0] * matrix.0[0][0]
                     + self.0[0][1] * matrix.0[1][0]
@@ -144,7 +143,7 @@ impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
                 self.0[0][0] * matrix.0[0][3]
                     + self.0[0][1] * matrix.0[1][3]
                     + self.0[0][2] * matrix.0[2][3]
-                    + self.0[0][3] * matrix.0[3][3]
+                    + self.0[0][3] * matrix.0[3][3],
             ],
             [
                 self.0[1][0] * matrix.0[0][0]
@@ -162,7 +161,7 @@ impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
                 self.0[1][0] * matrix.0[0][3]
                     + self.0[1][1] * matrix.0[1][3]
                     + self.0[1][2] * matrix.0[2][3]
-                    + self.0[1][3] * matrix.0[3][3]
+                    + self.0[1][3] * matrix.0[3][3],
             ],
             [
                 self.0[2][0] * matrix.0[0][0]
@@ -180,7 +179,7 @@ impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
                 self.0[2][0] * matrix.0[0][3]
                     + self.0[2][1] * matrix.0[1][3]
                     + self.0[2][2] * matrix.0[2][3]
-                    + self.0[2][3] * matrix.0[3][3]
+                    + self.0[2][3] * matrix.0[3][3],
             ],
             [
                 self.0[3][0] * matrix.0[0][0]
@@ -198,48 +197,39 @@ impl std::ops::Mul<TransformationMatrix> for TransformationMatrix {
                 self.0[3][0] * matrix.0[0][3]
                     + self.0[3][1] * matrix.0[1][3]
                     + self.0[3][2] * matrix.0[2][3]
-                    + self.0[3][3] * matrix.0[3][3]
+                    + self.0[3][3] * matrix.0[3][3],
             ],
         ])
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Line                                                                      //
+// Polygon                                                                   //
 ///////////////////////////////////////////////////////////////////////////////
 #[derive(Copy, Clone)]
-pub struct Line(pub [Vertex; 2]);
-impl Index<usize> for Line {
-    type Output = Vertex;
+pub struct Polygon<T> {
+    pub p1: T,
+    pub p2: T,
+    pub p3: T,
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
-    }
+    pub normal: Vector,
 }
-impl std::ops::IndexMut<usize> for Line {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.0[index]
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Triangle                                                                  //
-///////////////////////////////////////////////////////////////////////////////
-#[derive(Copy, Clone)]
-pub struct Triangle {
-    pub p1: Vertex,
-    pub p2: Vertex,
-    pub p3: Vertex,
-
-    // pub lines: [Line; 3],
-}
-impl Triangle {
-    pub fn new(p1: Vertex, p2: Vertex, p3: Vertex) -> Triangle {
-        Triangle {
+impl<T> Polygon<T> {
+    pub fn new(p1: T, p2: T, p3: T, normal: Vector) -> Polygon<T> {
+        Polygon {
             p1,
             p2,
             p3,
-            // lines: [Line([p1, p2]), Line([p2, p3]), Line([p3, p1])],
+            normal,
         }
     }
 }
+
+/// Polygon where verticies are indexes to a list.
+pub type IndexPolygon = Polygon<usize>;
+
+/// Polygon where all members are references.
+pub type RefPolygon<'a> = Polygon<&'a Vertex>;
+
+/// Polygon where all members are owned.
+pub type OwnPolygon = Polygon<Vertex>;
