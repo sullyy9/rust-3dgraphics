@@ -185,12 +185,12 @@ impl Mesh {
     pub fn project_to_screen(&mut self, screen_width: f32, screen_height: f32) {
         let screen_width_mul = screen_width as f32 / 2.0;
         let screen_height_mul = screen_height as f32 / 2.0;
-        let screen_depth_mul = 255.0;
+        let screen_depth_mul = 1000.0;
         for vertex in self.verticies.iter_mut() {
             vertex.x = (vertex.x + 1.0) * screen_width_mul;
             vertex.y = (vertex.y + 1.0) * screen_height_mul;
             vertex.z = vertex.z * screen_depth_mul;
-            vertex.z = 255.0 - vertex.z; // We want z to be higher the closer to the camera it is
+            vertex.z = 1000.0 - vertex.z; // We want z to be higher the closer to the camera it is
         }
     }
 }

@@ -22,6 +22,7 @@ pub struct GraphicsWindow {
     pub size: PhysicalSize<u32>,
 
     pub pixel_buffer: Pixels,
+    pub zbuffer: Vec<Vec<f32>>,
 
     near_plane: f32,
     far_plane: f32,
@@ -48,6 +49,8 @@ impl GraphicsWindow {
                 .expect("Error: create pixel buffer")
         };
 
+        let zbuffer = vec![vec![0.0; (size.width + 1) as usize]; (size.height + 1) as usize];
+
         // Create the transformation matrix to project camera space onto NDC space
         let near_plane = 100.0;
         let far_plane = 1000.0;
@@ -69,6 +72,7 @@ impl GraphicsWindow {
             window,
             size,
             pixel_buffer,
+            zbuffer,
             near_plane,
             far_plane,
             fov,
@@ -83,6 +87,9 @@ impl GraphicsWindow {
             .resize_surface(self.size.width, self.size.height);
         self.pixel_buffer
             .resize_buffer(self.size.width, self.size.height);
+
+        self.zbuffer =
+            vec![vec![0.0; (self.size.width + 1) as usize]; (self.size.height + 1) as usize];
 
         // Recalculate the projection matrix
         let aspect_ratio = size.width as f32 / size.height as f32;
@@ -104,15 +111,20 @@ impl GraphicsWindow {
         for i in self.pixel_buffer.get_frame().iter_mut() {
             *i = 0;
         }
+        for element in self.zbuffer.iter_mut() {
+            for i in element {
+                *i = 0.0;
+            }
+        }
     }
 
     /// Draw a polygon using rasterization, as a wireframe or both.
     pub fn draw_polygon(&mut self, edge_table: &rast::EdgeTable, style: DrawType) {
         // Calculate the green intensity from the z part of the polygons normal.
         // the Z normal will be between -1 and 1 with -1 facing the camera
-        let mut colour = {
+        let colour = {
             let intensity = ((-edge_table.normal.z + 1.0) * 127.0) as u8;
-            [0, intensity, 0, 0]
+            [0, intensity, 0, 255]
         };
 
         // Draw a rasterized polygon
@@ -142,8 +154,10 @@ impl GraphicsWindow {
 
                             // interpolate X between the 2 edges.
                             for x in xrange {
-                                colour[3] = z as u8;
-                                self.draw_pixel(x as u32, y as u32, colour);
+                                if z > self.zbuffer[y as usize][x as usize] {
+                                    self.draw_pixel(x as u32, y as u32, colour);
+                                    self.zbuffer[y as usize][x as usize] = z;
+                                }
 
                                 z = z + zstep;
                             }
@@ -186,10 +200,7 @@ impl GraphicsWindow {
             .get_mut(element..(element + 4))
             .unwrap();
 
-        // Using the alpha channel as a z buffer
-        if colour[3] > pixel[3] {
-            pixel.copy_from_slice(&colour);
-        }
+        pixel.copy_from_slice(&colour);
     }
 
     /// Render the pixel buffer to the screen.
