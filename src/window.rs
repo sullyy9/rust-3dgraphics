@@ -51,7 +51,7 @@ impl GraphicsWindow {
         // Create the transformation matrix to project camera space onto NDC space
         let near_plane = 100.0;
         let far_plane = 1000.0;
-        let fov = 90.0;
+        let fov = 45.0;
         let aspect_ratio = size.width as f32 / size.height as f32;
 
         let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
@@ -119,30 +119,40 @@ impl GraphicsWindow {
         if style == DrawType::Fill || style == DrawType::Both {
             let mut y = edge_table.ymin;
             for edges in edge_table.iter() {
-                match edges.get_edges() {
-                    Ok(edges) => {
-                        let xrange = edges[0].x..edges[1].x;
+                if y > 0 && y <= self.size.height as i32 {
+                    match edges.get_edges() {
+                        Ok(edges) => {
+                            let xrange = {
+                                let edge1 = edges[0].x.clamp(0, self.size.width as i32);
+                                let edge2 = edges[1].x.clamp(0, self.size.width as i32);
+                                edge1..edge2
+                            };
 
-                        // Find out how much Z changes for each X
-                        let zstep = {
-                            let dz = edges[1].z - edges[0].z;
-                            let dx = edges[1].x - edges[0].x;
-                            dz as f32 / dx as f32
-                        };
-                        let mut z = edges[0].z as f32;
+                            // Find out how much Z changes for each X
+                            let zstep = {
+                                let dz = edges[1].z - edges[0].z;
 
-                        // interpolate X between the 2 edges.
-                        for x in xrange {
-                            colour[3] = z as u8;
-                            self.draw_pixel(x as u32, y as u32, colour);
+                                let x1 = edges[0].x.clamp(0, self.size.width as i32);
+                                let x2 = edges[1].x.clamp(0, self.size.width as i32);
+                                let dx = x2 - x1;
 
-                            z = z + zstep;
+                                dz as f32 / dx as f32
+                            };
+                            let mut z = edges[0].z as f32;
+
+                            // interpolate X between the 2 edges.
+                            for x in xrange {
+                                colour[3] = z as u8;
+                                self.draw_pixel(x as u32, y as u32, colour);
+
+                                z = z + zstep;
+                            }
                         }
-                    },
-                    Err(_error) => {
-                        println!("No edges for Y coordinate {}", y);
-                    },
-                };
+                        Err(_error) => {
+                            println!("No edges for Y coordinate {}", y);
+                        }
+                    };
+                }
                 y = y + 1;
             }
         }

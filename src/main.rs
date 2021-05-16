@@ -122,7 +122,7 @@ fn main() {
                 }
 
                 // Transform the cube
-                //cube_position = prim::Vertex::new(0.0, 0.0, 200.0, 1.0);
+                cube_position = prim::Vertex::new(0.0, 0.0, 200.0, 1.0);
                 cube.position = cube_position;
                 cube.rotate(cube_orientation);
 
