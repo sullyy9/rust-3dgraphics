@@ -1,22 +1,26 @@
 use crate::primitives as prim;
 
-/// The mesh consists of a number of verticies and polygons. A polygon is simply 3 indicies
-/// to the positions its verticies in the verticies vector.
+/// The mesh consists of a number of verticies and polygons. Each polygon contains 3 indicies
+/// to the positions of its verticies in the verticies vector.
 #[derive(Clone)]
 pub struct Mesh {
-    pub verticies: Vec<prim::Vertex>,
-    pub polygons: Vec<prim::IndexPolygon>,
+    verticies: Vec<prim::Vertex>,
+    normals: Vec<prim::Vector>,
+    polygons: Vec<prim::IndexPoly>,
 
-    pub visible_polygons: Vec<prim::IndexPolygon>,
+    visible_polygons: Vec<prim::IndexPoly>,
 
     pub position: prim::Vertex,
     pub orientation: prim::Vertex,
 }
-/// Construction functions
+// Construction functions
 impl Mesh {
+    ///
     /// Create an empty mesh
+    ///
     pub fn new() -> Mesh {
         let verticies = Vec::new();
+        let normals = Vec::new();
         let polygons = Vec::new();
         let visible_polygons = Vec::new();
 
@@ -25,6 +29,7 @@ impl Mesh {
 
         Mesh {
             verticies,
+            normals,
             polygons,
             visible_polygons,
             position,
@@ -32,165 +37,274 @@ impl Mesh {
         }
     }
 
+    ///
     /// Load a cube into the mesh
+    ///
     pub fn load_cube(&mut self, edge_length: f32) {
         let pos = edge_length / 2.0;
         let neg = -edge_length / 2.0;
 
-        self.verticies.push(prim::Vertex::new(neg, neg, pos, 0.0));
-        self.verticies.push(prim::Vertex::new(pos, neg, pos, 0.0));
-        self.verticies.push(prim::Vertex::new(neg, neg, neg, 0.0));
-        self.verticies.push(prim::Vertex::new(pos, neg, neg, 0.0));
-        self.verticies.push(prim::Vertex::new(neg, pos, pos, 0.0));
-        self.verticies.push(prim::Vertex::new(pos, pos, pos, 0.0));
-        self.verticies.push(prim::Vertex::new(neg, pos, neg, 0.0));
-        self.verticies.push(prim::Vertex::new(pos, pos, neg, 0.0));
+        self.verticies.push(prim::Vertex::new(neg, neg, pos, 1.0));
+        self.verticies.push(prim::Vertex::new(pos, neg, pos, 1.0));
+        self.verticies.push(prim::Vertex::new(neg, neg, neg, 1.0));
+        self.verticies.push(prim::Vertex::new(pos, neg, neg, 1.0));
+        self.verticies.push(prim::Vertex::new(neg, pos, pos, 1.0));
+        self.verticies.push(prim::Vertex::new(pos, pos, pos, 1.0));
+        self.verticies.push(prim::Vertex::new(neg, pos, neg, 1.0));
+        self.verticies.push(prim::Vertex::new(pos, pos, neg, 1.0));
 
-        let norm = prim::Vector::new(0.0, 0.0, 0.0, 0.0);
-        self.polygons.push(prim::Polygon::new(2, 6, 7, norm));
-        self.polygons.push(prim::Polygon::new(2, 7, 3, norm));
-        self.polygons.push(prim::Polygon::new(3, 7, 5, norm));
-        self.polygons.push(prim::Polygon::new(3, 5, 1, norm));
-        self.polygons.push(prim::Polygon::new(1, 5, 4, norm));
-        self.polygons.push(prim::Polygon::new(1, 4, 0, norm));
-        self.polygons.push(prim::Polygon::new(0, 4, 6, norm));
-        self.polygons.push(prim::Polygon::new(0, 6, 2, norm));
-        self.polygons.push(prim::Polygon::new(6, 4, 5, norm));
-        self.polygons.push(prim::Polygon::new(6, 5, 7, norm));
-        self.polygons.push(prim::Polygon::new(0, 2, 3, norm));
-        self.polygons.push(prim::Polygon::new(0, 3, 1, norm));
+        self.polygons.push(prim::IndexPoly::new(2, 6, 7, 0));
+        self.polygons.push(prim::IndexPoly::new(2, 7, 3, 1));
+        self.polygons.push(prim::IndexPoly::new(3, 7, 5, 2));
+        self.polygons.push(prim::IndexPoly::new(3, 5, 1, 3));
+        self.polygons.push(prim::IndexPoly::new(1, 5, 4, 4));
+        self.polygons.push(prim::IndexPoly::new(1, 4, 0, 5));
+        self.polygons.push(prim::IndexPoly::new(0, 4, 6, 6));
+        self.polygons.push(prim::IndexPoly::new(0, 6, 2, 7));
+        self.polygons.push(prim::IndexPoly::new(6, 4, 5, 8));
+        self.polygons.push(prim::IndexPoly::new(6, 5, 7, 9));
+        self.polygons.push(prim::IndexPoly::new(0, 2, 3, 10));
+        self.polygons.push(prim::IndexPoly::new(0, 3, 1, 11));
+
+        for _ in self.polygons.iter() {
+            self.normals.push(prim::Vector::new(0.0, 0.0, 0.0, 0.0));
+        }
     }
 }
 
-/// Transformation functions
+//
+// Functions to translate or rotate the mesh
+//
+#[allow(dead_code)]
 impl Mesh {
-    /// Perform a rotation transformation given the desired orientation
-    pub fn rotate(&mut self, orientation: prim::Vertex) {
-        let pi = std::f32::consts::PI;
-        let x_rotation = (orientation.x - self.orientation.x) * (pi / 180.0);
-        let y_rotation = (orientation.y - self.orientation.y) * (pi / 180.0);
-        let z_rotation = (orientation.z - self.orientation.z) * (pi / 180.0);
-        self.orientation = orientation;
+    ///
+    /// Set the mesh's absolute orientation.
+    ///
+    pub fn abs_orientation(&mut self, x: f32, y: f32, z: f32) {
+        self.orientation.x = x.clamp(-180.0, 180.0);
+        self.orientation.y = y.clamp(-180.0, 180.0);
+        self.orientation.z = z.clamp(-180.0, 180.0);
+    }
 
-        let sin_x = f32::sin(x_rotation);
-        let cos_x = f32::cos(x_rotation);
-        let sin_y = f32::sin(y_rotation);
-        let cos_y = f32::cos(y_rotation);
-        let sin_z = f32::sin(z_rotation);
-        let cos_z = f32::cos(z_rotation);
+    ///
+    /// Set the mesh's absolute orientation.
+    ///
+    pub fn rel_orientation(&mut self, x: f32, y: f32, z: f32) {
+        self.orientation.x += x;
+        self.orientation.y += y;
+        self.orientation.z += z;
 
-        let x_rot_matrix = prim::TransformMatrix([
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, cos_x, -sin_x, 0.0],
-            [0.0, sin_x, cos_x, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]);
-        let y_rot_matrix = prim::TransformMatrix([
-            [cos_y, 0.0, sin_y, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [-sin_y, 0.0, cos_y, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]);
-        let z_rot_matrix = prim::TransformMatrix([
-            [cos_z, -sin_z, 0.0, 0.0],
-            [sin_z, cos_z, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]);
+        while self.orientation.x > 180.0 {
+            self.orientation.x -= 360.0;
+        }
+        while self.orientation.x < 180.0 {
+            self.orientation.x += 360.0;
+        }
 
-        let combined_matrix = z_rot_matrix * y_rot_matrix * x_rot_matrix;
+        while self.orientation.y > 180.0 {
+            self.orientation.y -= 360.0;
+        }
+        while self.orientation.y < 180.0 {
+            self.orientation.y += 360.0;
+        }
 
+        while self.orientation.y > 180.0 {
+            self.orientation.y -= 360.0;
+        }
+        while self.orientation.y < 180.0 {
+            self.orientation.y += 360.0;
+        }
+    }
+
+    ///
+    /// Set the mesh's absolute position.
+    ///
+    pub fn abs_position(&mut self, x: f32, y: f32, z: f32) {
+        self.position.x = x;
+        self.position.y = y;
+        self.position.z = z;
+    }
+
+    ///
+    /// Set the mesh's position relative to it's current position.
+    ///
+    pub fn rel_position(&mut self, x: f32, y: f32, z: f32) {
+        self.position.x += x;
+        self.position.y += y;
+        self.position.z += z;
+    }
+}
+
+//
+// Implementation of polygon iterators.
+//
+pub struct PolyIterator<'a> {
+    vertex_list: &'a [prim::Vertex],
+    normal_list: &'a [prim::Vector],
+    polygon_list: &'a [prim::IndexPoly],
+}
+#[allow(dead_code)]
+impl Mesh {
+    ///
+    /// Iterate over all polygons immutably.
+    ///
+    pub fn iter_all_polygons<'a>(&'a self) -> PolyIterator<'a> {
+        let vertex_list = self.verticies.as_slice();
+        let normal_list = self.normals.as_slice();
+        let polygon_list = self.polygons.as_slice();
+
+        PolyIterator {
+            vertex_list,
+            normal_list,
+            polygon_list,
+        }
+    }
+
+    ///
+    /// Iterate over only visible polygons immutably.
+    ///
+    pub fn iter_visible_polygons<'a>(&'a self) -> PolyIterator<'a> {
+        let vertex_list = self.verticies.as_slice();
+        let normal_list = self.normals.as_slice();
+        let polygon_list = self.visible_polygons.as_slice();
+
+        PolyIterator {
+            vertex_list,
+            normal_list,
+            polygon_list,
+        }
+    }
+}
+impl<'a> Iterator for PolyIterator<'a> {
+    type Item = prim::RefPoly<'a>;
+
+    ///
+    /// Get the next item.
+    ///
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.polygon_list.is_empty() {
+            None
+        } else {
+            let ref_polygon = {
+                // Split off a reference to the first polygon in the slice and give the reference to the rest of the
+                // list back to the iterator struct.
+                let (index_poly, remaining_list) = self.polygon_list.split_first()?;
+                self.polygon_list = remaining_list;
+
+                // Construct a polygon of references from the index polygon and vertex list.
+                prim::RefPoly::new(
+                    &self.vertex_list[index_poly.p1],
+                    &self.vertex_list[index_poly.p2],
+                    &self.vertex_list[index_poly.p3],
+                    &self.normal_list[index_poly.normal],
+                )
+            };
+
+            Some(ref_polygon)
+        }
+    }
+}
+
+//
+// Pipeline functions for converting the mesh from camera space to screen space
+//
+impl Mesh {
+    ///
+    /// Create a new mesh that has been run through the pipeline and contains only the polygons that should be drawn.
+    ///
+    pub fn run_pipeline(&self, project_mat: &prim::TransformMatrix, window_size: [f32; 2]) -> Mesh {
+        let mut processed_mesh = self.clone();
+        processed_mesh.apply_transformations();
+        processed_mesh.find_normals();
+        processed_mesh.project_to_ndc(project_mat);
+        processed_mesh.polygons_in_view();
+        processed_mesh.project_to_screen(window_size[0], window_size[1]);
+
+        processed_mesh
+    }
+
+    ///
+    /// Apply position and rotation transformations.
+    ///
+    pub fn apply_transformations(&mut self) {
+        // Find the rotation matrix
+        let rotation_matrix = {
+            let pi = std::f32::consts::PI;
+            let x_rot = self.orientation.x * (pi / 180.0);
+            let y_rot = self.orientation.y * (pi / 180.0);
+            let z_rot = self.orientation.z * (pi / 180.0);
+
+            prim::TransformMatrix::new_rotation(x_rot, y_rot, z_rot)
+        };
+
+        // Apply rotation then position to each vertex.
         for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex * combined_matrix;
+            *vertex = *vertex * rotation_matrix;
+            *vertex = *vertex + self.position;
         }
     }
 
-    /// Take an index polygon
-    /// Return a polygon consisting of references to it's verticies.
-    pub fn get_polygon_ref(&self, polygon: &prim::IndexPolygon) -> prim::RefPolygon {
-        let p1 = &self.verticies[polygon.p1];
-        let p2 = &self.verticies[polygon.p2];
-        let p3 = &self.verticies[polygon.p3];
-        let normal = polygon.normal;
-
-        prim::Polygon::new(p1, p2, p3, normal)
-    }
-
-    /// Take an index polygon
-    /// Return a polygon which owns it's verticies.
-    pub fn get_polygon_owned(&self, polygon: &prim::IndexPolygon) -> prim::OwnPolygon {
-        let p1 = self.verticies[polygon.p1];
-        let p2 = self.verticies[polygon.p2];
-        let p3 = self.verticies[polygon.p3];
-        let normal = polygon.normal;
-
-        prim::Polygon::new(p1, p2, p3, normal)
-    }
-}
-
-/// Pipeline functions
-impl Mesh {
+    ///
+    /// Find the normal unit vectors of each polygon in the mesh.
+    ///
     pub fn find_normals(&mut self) {
-        for i in 0..self.polygons.len() {
-            let index_polygon = self.polygons[i];
-            let polygon = self.get_polygon_ref(&index_polygon);
+        for indexpoly in self.polygons.iter() {
+            self.normals[indexpoly.normal] = {
+                let vect1 = self.verticies[indexpoly.p2] - self.verticies[indexpoly.p1];
+                let vect2 = self.verticies[indexpoly.p3] - self.verticies[indexpoly.p1];
 
-            let vector_a = *polygon.p2 - *polygon.p1;
-            let vector_b = *polygon.p3 - *polygon.p1;
+                let mut norm_x = vect1.y * vect2.z - vect1.z * vect2.y;
+                let mut norm_y = vect1.z * vect2.x - vect1.x * vect2.z;
+                let mut norm_z = vect1.x * vect2.y - vect1.y * vect2.x;
 
-            let mut normal_x = vector_a.y * vector_b.z - vector_a.z * vector_b.y;
-            let mut normal_y = vector_a.z * vector_b.x - vector_a.x * vector_b.z;
-            let mut normal_z = vector_a.x * vector_b.y - vector_a.y * vector_b.x;
+                let divisor = f32::sqrt(norm_x * norm_x + norm_y * norm_y + norm_z * norm_z);
+                norm_x /= divisor;
+                norm_y /= divisor;
+                norm_z /= divisor;
 
-            // Make the normal a unit vector
-            let divisor =
-                f32::sqrt(normal_x * normal_x + normal_y * normal_y + normal_z * normal_z);
-
-            normal_x = normal_x / divisor;
-            normal_y = normal_y / divisor;
-            normal_z = normal_z / divisor;
-
-            self.polygons[i].normal = prim::Vector::new(normal_x, normal_y, normal_z, 0.0);
+                prim::Vector::new(norm_x, norm_y, norm_z, 0.0)
+            }
         }
     }
 
-    /// Project a mesh object from camera space to NDC space.
+    ///
+    /// Project the mesh from camera space to NDC space by applying a projection matrix to each vertex
+    ///
     pub fn project_to_ndc(&mut self, projection_matrix: &prim::TransformMatrix) {
         for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex + self.position;
+            //*vertex = *vertex + self.position;
             *vertex = *vertex * (*projection_matrix);
             *vertex = *vertex / vertex.w;
         }
     }
 
-    /// Copy any polygons that are at least partially within ndc space, into the polygon list.
+    ///
+    /// Copy any polygons that are at least partially within ndc space, into the visible polygon list.
+    ///
     pub fn polygons_in_view(&mut self) {
-        for index_polygon in self.polygons.iter() {
-            let polygon: prim::RefPolygon = self.get_polygon_ref(index_polygon);
+        for indexpoly in self.polygons.iter() {
+            let vert1 = &self.verticies[indexpoly.p1];
+            let vert2 = &self.verticies[indexpoly.p2];
+            let vert3 = &self.verticies[indexpoly.p3];
 
-            if (polygon.p1.x.abs() < 1.0 && polygon.p1.y.abs() < 1.0 && polygon.p1.z.abs() < 1.0)
-                || (polygon.p2.x.abs() < 1.0
-                    && polygon.p2.y.abs() < 1.0
-                    && polygon.p2.z.abs() < 1.0)
-                || (polygon.p3.x.abs() < 1.0
-                    && polygon.p3.y.abs() < 1.0
-                    && polygon.p3.z.abs() < 1.0)
-            {
-                self.visible_polygons.push(index_polygon.to_owned());
+            if vert1.in_ndc_space() || vert2.in_ndc_space() || vert3.in_ndc_space() {
+                self.visible_polygons.push(indexpoly.to_owned());
             }
         }
     }
 
-    /// Take a mesh and Transform all of its points to screen space.
+    ///
+    /// Project the mesh from NDC space to screen space
+    ///
     pub fn project_to_screen(&mut self, screen_width: f32, screen_height: f32) {
         let screen_width_mul = screen_width as f32 / 2.0;
         let screen_height_mul = screen_height as f32 / 2.0;
         let screen_depth_mul = 1000.0;
+
         for vertex in self.verticies.iter_mut() {
             vertex.x = (vertex.x + 1.0) * screen_width_mul;
             vertex.y = (vertex.y + 1.0) * screen_height_mul;
-            vertex.z = vertex.z * screen_depth_mul;
-            vertex.z = 1000.0 - vertex.z; // We want z to be higher the closer to the camera it is
+            vertex.z = screen_depth_mul - (vertex.z * screen_depth_mul);
         }
     }
 }

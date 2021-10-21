@@ -1,20 +1,26 @@
 use crate::primitives as prim;
 use std::mem::swap;
 
+///
 /// Error handling
+///
 type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     NoEdge,
 }
 
+///
 /// A sub-struct of EdgeList containg x and z coordinates
+///
 #[derive(Clone)]
 pub struct XZPair {
     pub x: i32,
     pub z: i32,
 }
 
+///
 /// A sub-struct of EdgeTable containg a list of XZPair's
+///
 #[derive(Clone)]
 pub struct EdgeList {
     list: Vec<XZPair>,
@@ -30,10 +36,12 @@ impl EdgeList {
         self.list.push(xzpair);
     }
 
+    ///
     /// Return the first and last edges from the list as an array
     ///
     /// # Errors
     /// NoEdge: No edges in the list
+    ///
     pub fn get_edges(&self) -> Result<[&XZPair; 2],> {
         match self.list.first() {
             Some(pair1) => {
@@ -49,7 +57,9 @@ impl EdgeList {
     }
 }
 
-/// Edge table for the rasterization process.
+///
+/// Edge table required for the rasterization process.
+///
 pub struct EdgeTable {
     table: Vec<EdgeList>,
     pub ymin: i32,
@@ -59,50 +69,59 @@ pub struct EdgeTable {
 }
 // Constructor function and helpers
 impl EdgeTable {
+    ///
     /// Create a new EdgeTable from a screen space polygon.
-    pub fn new(mut poly: prim::OwnPolygon) -> EdgeTable {
-        // Get the minimum and maximum y coordinate of the polygon. Limit it to screen space.
-        let (ymin, ymax) = EdgeTable::min_max(poly.p1.y, poly.p2.y, poly.p3.y);
-        let (ymin, ymax) = (ymin as i32, ymax as i32);
+    ///
+    pub fn new(poly: prim::RefPoly) -> EdgeTable {
+        // Get copies of the referenced values the refpolygon
+        let mut vert1 = *poly.p1;
+        let mut vert2 = *poly.p2;
+        let mut vert3 = *poly.p3;
+        let normal = *poly.normal;
 
-        // Order the polygon's verticies so that the left-most is first
-        if poly.p2.x < poly.p1.x && poly.p2.x < poly.p3.x {
-            swap(&mut poly.p1, &mut poly.p2);
-        } else if poly.p3.x < poly.p1.x && poly.p3.x < poly.p2.x {
-            swap(&mut poly.p1, &mut poly.p3);
+        // Order the verticies in increasing order of X
+        if vert2.x < vert1.x && vert2.x < vert3.x {
+            swap(&mut vert1, &mut vert2);
+        } else if vert3.x < vert1.x && vert3.x < vert2.x {
+            swap(&mut vert1, &mut vert3);
         }
-        if poly.p3.x < poly.p2.x {
-            swap(&mut poly.p2, &mut poly.p3);
+        if vert3.x < vert2.x {
+            swap(&mut vert2, &mut vert3);
         }
 
-        // Add an element to the table for each y cordinate
+        // Add enough elements to the table to encompass the polygon in the Y axis
+        let (ymin, ymax) = {
+             let (min, max) = EdgeTable::min_max(vert1.y, vert2.y, vert3.y);
+             (min as i32, max as i32)
+        };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
         // Declare lines in clockwise order around the polygon but keep the leftmost point first.
-        let line1_gradient = (poly.p2.y - poly.p1.y) / (poly.p2.x - poly.p1.x);
-        let line2_gradient = (poly.p3.y - poly.p2.y) / (poly.p3.x - poly.p2.x);
-        let line3_gradient = (poly.p3.y - poly.p1.y) / (poly.p3.x - poly.p1.x);
-
-        let mut line1 = (poly.p1, poly.p2, line1_gradient);
-        let mut line2 = (poly.p2, poly.p3, line2_gradient);
-        let mut line3 = (poly.p1, poly.p3, line3_gradient);
+        let mut line1 = {
+            let gradient = (vert2.y - vert1.y) / (vert2.x - vert1.x);
+            (vert1, vert2, gradient)
+        };
+        let mut line2 = {
+            let gradient = (vert3.y - vert2.y) / (vert3.x - vert2.x);
+            (vert2, vert3, gradient)
+        };
+        let mut line3 = {
+            let gradient = (vert3.y - vert1.y) / (vert3.x - vert1.x);
+            (vert1, vert3, gradient)
+        };
 
         // Order the lines into the order they should be drawn
         if (line1.2 > 0.0 && line3.2 < 0.0) || (line1.2 < 0.0 && line3.2 > 0.0) {
-            // Draw lines in order: 1, 3, 2
             swap(&mut line2, &mut line3);
         } else if line1.2.abs() < line3.2.abs() {
-            // Draw lines in order: 3, 2, 1
             swap(&mut line1, &mut line3);
-        } else {
-            // Draw lines in order: 1, 2, 3
         }
 
         EdgeTable::draw_line(line1.0, line1.1, &mut table, ymin as i32);
         EdgeTable::draw_line(line2.0, line2.1, &mut table, ymin as i32);
         EdgeTable::draw_line(line3.0, line3.1, &mut table, ymin as i32);
 
-        let normal = poly.normal;
+        // let normal = poly.normal;
         EdgeTable {
             table,
             ymin,
@@ -111,7 +130,9 @@ impl EdgeTable {
         }
     }
 
+    ///
     /// Return the minimum and maximum values of 3 parameters as a tuple (min, max)
+    ///
     fn min_max(val1: f32, val2: f32, val3: f32) -> (f32, f32) {
         let (mut min, mut max) = if val1 < val2 {
             (val1, val2)
@@ -128,7 +149,9 @@ impl EdgeTable {
         (min, max)
     }
 
+    ///
     /// Draw a line into an edge table using brezenham's algorithm
+    ///
     fn draw_line(p1: prim::Vertex, p2: prim::Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
         let (x1, y1, z1) = (p1.x as i32, p1.y as i32, p1.z as i32);
         let (x2, y2, z2) = (p2.x as i32, p2.y as i32, p2.z as i32);
@@ -229,7 +252,17 @@ impl EdgeTable {
     }
 }
 impl EdgeTable {
+    ///
+    /// Iterate imutably over an EdgeList.
+    ///
     pub fn iter(&self) -> std::slice::Iter<'_, EdgeList> {
         self.table.iter()
+    }
+
+    ///
+    /// Iterate imutably over a slice of an EdgeList.
+    ///
+    pub fn iter_between(&self, first: usize, last: usize) -> std::slice::Iter<'_, EdgeList> {
+        self.table[first..last].iter()
     }
 }

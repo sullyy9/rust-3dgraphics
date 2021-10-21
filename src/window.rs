@@ -1,3 +1,5 @@
+use std::u32;
+
 use crate::primitives as prim;
 use crate::rasterizer as rast;
 
@@ -19,10 +21,11 @@ pub enum DrawType {
 
 pub struct GraphicsWindow {
     window: Window,
-    pub size: PhysicalSize<u32>,
+    pub width: u32,
+    pub height: u32,
 
-    pub pixel_buffer: Pixels,
-    pub zbuffer: Vec<Vec<f32>>,
+    pixel_buffer: Pixels,
+    zbuffer: Vec<Vec<f32>>,
 
     near_plane: f32,
     far_plane: f32,
@@ -30,47 +33,53 @@ pub struct GraphicsWindow {
     pub projection_matrix: prim::TransformMatrix,
 }
 impl GraphicsWindow {
+    ///
+    /// Create a new graphics window.
+    ///
     pub fn new(width: u32, height: u32, event_loop: &EventLoop<()>) -> GraphicsWindow {
-        let size = PhysicalSize::new(width, height);
-
         // Create the actual window
-        let window = WindowBuilder::new()
-            .with_title("3D Graphics")
-            .with_inner_size(size)
-            .with_min_inner_size(size)
-            .build(&event_loop)
-            .unwrap();
+        let window = {
+            let size = PhysicalSize::new(width, height);
+            WindowBuilder::new()
+                .with_title("3D Graphics")
+                .with_inner_size(size)
+                .with_min_inner_size(size)
+                .build(&event_loop)
+                .unwrap()
+        };
 
         // Create a pixel buffer within the window
         let pixel_buffer = {
-            let surface_texture = SurfaceTexture::new(size.width, size.height, &window);
+            let surface_texture = SurfaceTexture::new(width, height, &window);
 
-            Pixels::new(size.width, size.height, surface_texture)
-                .expect("Error: create pixel buffer")
+            Pixels::new(width, height, surface_texture).expect("Error: create pixel buffer")
         };
 
-        let zbuffer = vec![vec![0.0; (size.width + 1) as usize]; (size.height + 1) as usize];
+        let zbuffer = vec![vec![0.0; (width + 1) as usize]; (height + 1) as usize];
 
         // Create the transformation matrix to project camera space onto NDC space
         let near_plane = 100.0;
         let far_plane = 1000.0;
         let fov = 45.0;
-        let aspect_ratio = size.width as f32 / size.height as f32;
 
-        let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
-        let y_mul = 1.0 / f32::tan(fov / 2.0);
-        let z1_mul = far_plane / (far_plane - near_plane);
-        let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
-        let projection_matrix = prim::TransformMatrix([
-            [x_mul, 0.0, 0.0, 0.0],
-            [0.0, y_mul, 0.0, 0.0],
-            [0.0, 0.0, z1_mul, 1.0],
-            [0.0, 0.0, z2_mul, 0.0],
-        ]);
+        let projection_matrix = {
+            let aspect_ratio = width as f32 / height as f32;
+            let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
+            let y_mul = 1.0 / f32::tan(fov / 2.0);
+            let z1_mul = far_plane / (far_plane - near_plane);
+            let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
+            prim::TransformMatrix([
+                [x_mul, 0.0, 0.0, 0.0],
+                [0.0, y_mul, 0.0, 0.0],
+                [0.0, 0.0, z1_mul, 1.0],
+                [0.0, 0.0, z2_mul, 0.0],
+            ])
+        };
 
         GraphicsWindow {
             window,
-            size,
+            width,
+            height,
             pixel_buffer,
             zbuffer,
             near_plane,
@@ -80,33 +89,38 @@ impl GraphicsWindow {
         }
     }
 
-    /// Resize the pixel buffer to match the window size
-    pub fn resize(&mut self, size: PhysicalSize<u32>) {
-        self.size = size;
-        self.pixel_buffer
-            .resize_surface(self.size.width, self.size.height);
-        self.pixel_buffer
-            .resize_buffer(self.size.width, self.size.height);
-
-        self.zbuffer =
-            vec![vec![0.0; (self.size.width + 1) as usize]; (self.size.height + 1) as usize];
+    ///
+    /// Resize the pixel buffer to match the window size.
+    ///
+    pub fn resize(&mut self, width: u32, height: u32) {
+        self.pixel_buffer.resize_surface(width, height);
+        self.pixel_buffer.resize_buffer(width, height);
+        self.zbuffer = vec![vec![0.0; (width + 1) as usize]; (height + 1) as usize];
 
         // Recalculate the projection matrix
-        let aspect_ratio = size.width as f32 / size.height as f32;
+        self.projection_matrix = {
+            let aspect_ratio = width as f32 / height as f32;
 
-        let x_mul = (1.0 / f32::tan(self.fov / 2.0)) / aspect_ratio;
-        let y_mul = 1.0 / f32::tan(self.fov / 2.0);
-        let z1_mul = self.far_plane / (self.far_plane - self.near_plane);
-        let z2_mul = -1.0 * (self.far_plane * self.near_plane) / (self.far_plane - self.near_plane);
-        self.projection_matrix = prim::TransformMatrix([
-            [x_mul, 0.0, 0.0, 0.0],
-            [0.0, y_mul, 0.0, 0.0],
-            [0.0, 0.0, z1_mul, 1.0],
-            [0.0, 0.0, z2_mul, 0.0],
-        ]);
+            let x_mul = (1.0 / f32::tan(self.fov / 2.0)) / aspect_ratio;
+            let y_mul = 1.0 / f32::tan(self.fov / 2.0);
+            let z1_mul = self.far_plane / (self.far_plane - self.near_plane);
+            let z2_mul =
+                -1.0 * (self.far_plane * self.near_plane) / (self.far_plane - self.near_plane);
+            prim::TransformMatrix([
+                [x_mul, 0.0, 0.0, 0.0],
+                [0.0, y_mul, 0.0, 0.0],
+                [0.0, 0.0, z1_mul, 1.0],
+                [0.0, 0.0, z2_mul, 0.0],
+            ])
+        };
+
+        self.width = width;
+        self.height = height;
     }
 
-    /// Clear the pixel buffer.
+    ///
+    /// Clear the pixel buffer and z buffer.
+    ///
     pub fn clear(&mut self) {
         for i in self.pixel_buffer.get_frame().iter_mut() {
             *i = 0;
@@ -118,7 +132,9 @@ impl GraphicsWindow {
         }
     }
 
-    /// Draw a polygon using rasterization, as a wireframe or both.
+    ///
+    /// Draw a polygon using rasterization.
+    ///
     pub fn draw_polygon(&mut self, edge_table: &rast::EdgeTable, style: DrawType) {
         // Calculate the green intensity from the z part of the polygons normal.
         // the Z normal will be between -1 and 1 with -1 facing the camera
@@ -129,45 +145,55 @@ impl GraphicsWindow {
 
         // Draw a rasterized polygon
         if style == DrawType::Fill || style == DrawType::Both {
-            let mut y = edge_table.ymin;
-            for edges in edge_table.iter() {
-                if y > 0 && y <= self.size.height as i32 {
-                    match edges.get_edges() {
-                        Ok(edges) => {
-                            let xrange = {
-                                let edge1 = edges[0].x.clamp(0, self.size.width as i32);
-                                let edge2 = edges[1].x.clamp(0, self.size.width as i32);
-                                edge1..edge2
-                            };
+            // Find the first and last elements we want to iterate between in the edge table.
+            // We only want elements that will be within screen space.
+            let (first, ystart) = if edge_table.ymin < 0 {
+                (edge_table.ymin.abs() as usize, 0)
+            } else {
+                (0, edge_table.ymin)
+            };
+            let last = if edge_table.ymax > self.height as i32 {
+                (self.height as i32 - edge_table.ymin) as usize
+            } else {
+                (edge_table.ymax - edge_table.ymin) as usize
+            };
 
-                            // Find out how much Z changes for each X
-                            let zstep = {
-                                let dz = edges[1].z - edges[0].z;
+            for (i, edges) in edge_table.iter_between(first, last).enumerate() {
+                let y = ystart + i as i32;
+                match edges.get_edges() {
+                    Ok(edges) => {
+                        let xrange = {
+                            let edge1 = edges[0].x.clamp(0, self.width as i32);
+                            let edge2 = edges[1].x.clamp(0, self.width as i32);
+                            edge1..edge2
+                        };
 
-                                let x1 = edges[0].x.clamp(0, self.size.width as i32);
-                                let x2 = edges[1].x.clamp(0, self.size.width as i32);
-                                let dx = x2 - x1;
+                        // Find out how much Z changes for each X
+                        let zstep = {
+                            let dz = edges[1].z - edges[0].z;
 
-                                dz as f32 / dx as f32
-                            };
-                            let mut z = edges[0].z as f32;
+                            let x1 = edges[0].x.clamp(0, self.width as i32);
+                            let x2 = edges[1].x.clamp(0, self.width as i32);
+                            let dx = x2 - x1;
 
-                            // interpolate X between the 2 edges.
-                            for x in xrange {
-                                if z > self.zbuffer[y as usize][x as usize] {
-                                    self.draw_pixel(x as u32, y as u32, colour);
-                                    self.zbuffer[y as usize][x as usize] = z;
-                                }
+                            dz as f32 / dx as f32
+                        };
+                        let mut z = edges[0].z as f32;
 
-                                z = z + zstep;
+                        // interpolate X between the 2 edges.
+                        for x in xrange {
+                            if z > self.zbuffer[y as usize][x as usize] {
+                                self.draw_pixel(x as u32, y as u32, colour);
+                                self.zbuffer[y as usize][x as usize] = z;
                             }
+
+                            z = z + zstep;
                         }
-                        Err(_error) => {
-                            println!("No edges for Y coordinate {}", y);
-                        }
-                    };
-                }
-                y = y + 1;
+                    }
+                    Err(_error) => {
+                        println!("No edges for Y coordinate {}", y);
+                    }
+                };
             }
         }
 
@@ -176,7 +202,7 @@ impl GraphicsWindow {
             let mut y = edge_table.ymin;
             for edges in edge_table.iter() {
                 for xzpair in edges.iter() {
-                    if xzpair.x >= 0 && xzpair.x < self.size.width as i32 {
+                    if xzpair.x >= 0 && xzpair.x < self.width as i32 {
                         self.draw_pixel(xzpair.x as u32, y as u32, [255, 0, 0, 255]);
                     }
                 }
@@ -185,13 +211,15 @@ impl GraphicsWindow {
         }
     }
 
+    ///
     /// Set a pixels colour via x and y coordinates with the origin in the bottom left corner.
+    ///
     pub fn draw_pixel(&mut self, x: u32, y: u32, colour: Colour) {
         // Figure out which 4 elements we need from the x and y coordinates then get a
         // pointer to the 4 elements which consitute the pixel.
         let element = {
-            let y_invert = self.size.height - y;
-            (((y_invert * self.size.width) + x) * 4) as usize
+            let y_invert = self.height - (y + 1);
+            (((y_invert * self.width) + x) * 4) as usize
         };
 
         let pixel = self
@@ -203,7 +231,9 @@ impl GraphicsWindow {
         pixel.copy_from_slice(&colour);
     }
 
+    ///
     /// Render the pixel buffer to the screen.
+    ///
     pub fn render(&mut self) {
         match self.pixel_buffer.render() {
             Ok(_) => {}
@@ -213,6 +243,9 @@ impl GraphicsWindow {
         }
     }
 
+    ///
+    ///
+    ///
     pub fn redraw(&self) {
         self.window.request_redraw();
     }

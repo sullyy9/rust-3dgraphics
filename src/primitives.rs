@@ -1,6 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
-// Vertex                                                                    //
-///////////////////////////////////////////////////////////////////////////////
+///
+/// Vertex
+///
 #[derive(Copy, Clone)]
 pub struct Vertex {
     pub x: f32,
@@ -9,13 +9,18 @@ pub struct Vertex {
     pub w: f32,
 }
 pub type Vector = Vertex;
+//
+// Constructor functions
+//
 impl Vertex {
     /// Create a new Vertex from coordinates
     pub fn new(x: f32, y: f32, z: f32, w: f32) -> Vertex {
         Vertex { x, y, z, w }
     }
 }
-// Implement addition for Vertex's.
+//
+// Operator overloads
+//
 impl std::ops::Add<Vertex> for Vertex {
     type Output = Vertex;
 
@@ -40,7 +45,6 @@ impl std::ops::Add<f32> for Vertex {
         }
     }
 }
-// Implement subtraction for Vertex's.
 impl std::ops::Sub<Vertex> for Vertex {
     type Output = Vertex;
 
@@ -65,7 +69,6 @@ impl std::ops::Sub<f32> for Vertex {
         }
     }
 }
-// Implement element wise division for Vertex's.
 impl std::ops::Div<f32> for Vertex {
     type Output = Vertex;
 
@@ -78,7 +81,6 @@ impl std::ops::Div<f32> for Vertex {
         }
     }
 }
-// Implement element wise multiplication for Vertex's.
 impl std::ops::Mul<f32> for Vertex {
     type Output = Vertex;
 
@@ -91,7 +93,6 @@ impl std::ops::Mul<f32> for Vertex {
         }
     }
 }
-// Implement matrix multiplication for Vertex's.
 impl std::ops::Mul<TransformMatrix> for Vertex {
     type Output = Vertex;
 
@@ -117,11 +118,64 @@ impl std::ops::Mul<TransformMatrix> for Vertex {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Transformation Matrix                                                     //
-///////////////////////////////////////////////////////////////////////////////
+impl Vertex {
+    ///
+    /// Check if a vertex is within ndc space.
+    ///
+    pub fn in_ndc_space(&self) -> bool {
+        if (self.x.abs() < 1.0) && (self.y.abs() < 1.0) && (self.z.abs() < 1.0) {
+            true
+        } else {
+            false
+        }
+    }
+}
+
+///
+/// 4x4 transformation matrix
+///
 #[derive(Copy, Clone)]
 pub struct TransformMatrix(pub [[f32; 4]; 4]);
+//
+// Constructor functions
+//
+impl TransformMatrix {
+    ///
+    /// Construct and return a rotation matrix
+    ///
+    pub fn new_rotation(x_rot: f32, y_rot: f32, z_rot: f32) -> TransformMatrix {
+        let sin_x = f32::sin(x_rot);
+        let cos_x = f32::cos(x_rot);
+        let sin_y = f32::sin(y_rot);
+        let cos_y = f32::cos(y_rot);
+        let sin_z = f32::sin(z_rot);
+        let cos_z = f32::cos(z_rot);
+
+        let x_rot_matrix = TransformMatrix([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, cos_x, -sin_x, 0.0],
+            [0.0, sin_x, cos_x, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let y_rot_matrix = TransformMatrix([
+            [cos_y, 0.0, sin_y, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [-sin_y, 0.0, cos_y, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let z_rot_matrix = TransformMatrix([
+            [cos_z, -sin_z, 0.0, 0.0],
+            [sin_z, cos_z, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        z_rot_matrix * y_rot_matrix * x_rot_matrix
+    }
+}
+
+//
+// Operator overloads
+//
 impl std::ops::Mul<TransformMatrix> for TransformMatrix {
     type Output = TransformMatrix;
 
@@ -203,33 +257,25 @@ impl std::ops::Mul<TransformMatrix> for TransformMatrix {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Polygon                                                                   //
-///////////////////////////////////////////////////////////////////////////////
+///
+/// Polygon
+///
 #[derive(Copy, Clone)]
 pub struct Polygon<T> {
     pub p1: T,
     pub p2: T,
     pub p3: T,
 
-    pub normal: Vector,
+    pub normal: T,
 }
 impl<T> Polygon<T> {
-    pub fn new(p1: T, p2: T, p3: T, normal: Vector) -> Polygon<T> {
-        Polygon {
-            p1,
-            p2,
-            p3,
-            normal,
-        }
+    pub fn new(p1: T, p2: T, p3: T, normal: T) -> Polygon<T> {
+        Polygon { p1, p2, p3, normal }
     }
 }
 
-/// Polygon where verticies are indexes to a list.
-pub type IndexPolygon = Polygon<usize>;
+/// Polygon where verticies are indexes to lists.
+pub type IndexPoly = Polygon<usize>;
 
-/// Polygon where all members are references.
-pub type RefPolygon<'a> = Polygon<&'a Vertex>;
-
-/// Polygon where all members are owned.
-pub type OwnPolygon = Polygon<Vertex>;
+/// Polygons where all members are references.
+pub type RefPoly<'a> = Polygon<&'a Vertex>;
