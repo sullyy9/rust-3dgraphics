@@ -1,3 +1,0 @@
-remove scaling from load_cube and add a seperate scaling function.
-
-The mesh pipeline should just spit out the visable polygons

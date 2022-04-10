@@ -1,7 +1,4 @@
-use std::u32;
-
-use crate::primitives as prim;
-use crate::rasterizer as rast;
+use crate::{rasterizer as rast, matrix};
 
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -25,12 +22,12 @@ pub struct GraphicsWindow {
     pub height: u32,
 
     pixel_buffer: Pixels,
-    zbuffer: Vec<Vec<f32>>,
+    zbuffer: Vec<Vec<f64>>,
 
-    near_plane: f32,
-    far_plane: f32,
-    fov: f32,
-    pub projection_matrix: prim::TransformMatrix,
+    near_plane: f64,
+    far_plane: f64,
+    fov: f64,
+    pub projection_matrix: matrix::TransformMatrix,
 }
 impl GraphicsWindow {
     ///
@@ -63,12 +60,12 @@ impl GraphicsWindow {
         let fov = 45.0;
 
         let projection_matrix = {
-            let aspect_ratio = width as f32 / height as f32;
-            let x_mul = (1.0 / f32::tan(fov / 2.0)) / aspect_ratio;
-            let y_mul = 1.0 / f32::tan(fov / 2.0);
+            let aspect_ratio = width as f64 / height as f64;
+            let x_mul = (1.0 / f64::tan(fov / 2.0)) / aspect_ratio;
+            let y_mul = 1.0 / f64::tan(fov / 2.0);
             let z1_mul = far_plane / (far_plane - near_plane);
             let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
-            prim::TransformMatrix([
+            matrix::TransformMatrix([
                 [x_mul, 0.0, 0.0, 0.0],
                 [0.0, y_mul, 0.0, 0.0],
                 [0.0, 0.0, z1_mul, 1.0],
@@ -99,14 +96,14 @@ impl GraphicsWindow {
 
         // Recalculate the projection matrix
         self.projection_matrix = {
-            let aspect_ratio = width as f32 / height as f32;
+            let aspect_ratio = width as f64 / height as f64;
 
-            let x_mul = (1.0 / f32::tan(self.fov / 2.0)) / aspect_ratio;
-            let y_mul = 1.0 / f32::tan(self.fov / 2.0);
+            let x_mul = (1.0 / f64::tan(self.fov / 2.0)) / aspect_ratio;
+            let y_mul = 1.0 / f64::tan(self.fov / 2.0);
             let z1_mul = self.far_plane / (self.far_plane - self.near_plane);
             let z2_mul =
                 -1.0 * (self.far_plane * self.near_plane) / (self.far_plane - self.near_plane);
-            prim::TransformMatrix([
+            matrix::TransformMatrix([
                 [x_mul, 0.0, 0.0, 0.0],
                 [0.0, y_mul, 0.0, 0.0],
                 [0.0, 0.0, z1_mul, 1.0],
@@ -176,9 +173,9 @@ impl GraphicsWindow {
                             let x2 = edges[1].x.clamp(0, self.width as i32);
                             let dx = x2 - x1;
 
-                            dz as f32 / dx as f32
+                            dz as f64 / dx as f64
                         };
-                        let mut z = edges[0].z as f32;
+                        let mut z = edges[0].z as f64;
 
                         // interpolate X between the 2 edges.
                         for x in xrange {
@@ -244,9 +241,10 @@ impl GraphicsWindow {
     }
 
     ///
-    ///
+    /// Redraw the window.
     ///
     pub fn redraw(&self) {
+        // Trgger a redraw event.
         self.window.request_redraw();
     }
 }

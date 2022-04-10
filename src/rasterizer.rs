@@ -1,4 +1,4 @@
-use crate::primitives as prim;
+use crate::primitives::{vertex, self};
 use std::mem::swap;
 
 ///
@@ -65,14 +65,14 @@ pub struct EdgeTable {
     pub ymin: i32,
     pub ymax: i32,
 
-    pub normal: prim::Vector,
+    pub normal: vertex::Vector,
 }
 // Constructor function and helpers
 impl EdgeTable {
     ///
     /// Create a new EdgeTable from a screen space polygon.
     ///
-    pub fn new(poly: prim::RefPoly) -> EdgeTable {
+    pub fn new(poly: primitives::RefPoly) -> EdgeTable {
         // Get copies of the referenced values the refpolygon
         let mut vert1 = *poly.p1;
         let mut vert2 = *poly.p2;
@@ -133,7 +133,7 @@ impl EdgeTable {
     ///
     /// Return the minimum and maximum values of 3 parameters as a tuple (min, max)
     ///
-    fn min_max(val1: f32, val2: f32, val3: f32) -> (f32, f32) {
+    fn min_max(val1: f64, val2: f64, val3: f64) -> (f64, f64) {
         let (mut min, mut max) = if val1 < val2 {
             (val1, val2)
         } else {
@@ -152,7 +152,7 @@ impl EdgeTable {
     ///
     /// Draw a line into an edge table using brezenham's algorithm
     ///
-    fn draw_line(p1: prim::Vertex, p2: prim::Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
+    fn draw_line(p1: vertex::Vertex, p2: vertex::Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
         let (x1, y1, z1) = (p1.x as i32, p1.y as i32, p1.z as i32);
         let (x2, y2, z2) = (p2.x as i32, p2.y as i32, p2.z as i32);
 
