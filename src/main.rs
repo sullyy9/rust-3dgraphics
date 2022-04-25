@@ -1,16 +1,16 @@
 mod mesh;
-mod primitives;
-mod matrix;
+mod physics;
 mod rasterizer;
 mod window;
-mod physics;
+mod world_object;
 
-use physics::PhysicalObject;
-use rasterizer as rast;
-
+use crate::{
+    mesh::Mesh,
+    mesh::geometry::{OrientationVector3D, Point3D, Vector3D},
+    rasterizer::EdgeTable,
+    window::{DrawType, GraphicsWindow},
+};
 use std::time::{Duration, Instant};
-
-use window::GraphicsWindow;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -24,12 +24,10 @@ fn main() -> ! {
 
     // Build a mesh in the form of a cube.
     // Set it's initial position and velocities so that it moves around the screen.
-    let mut cube = mesh::Mesh::new();
+    let mut cube = Mesh::default();
     cube.load_cube(100.0);
-    cube.set_absolute_position(0.0, 0.0, 400.0);
-    let mut cube_velocity_x = 1.0;
-    let mut cube_velocity_y = 1.0;
-    let mut cube_velocity_z = 1.0;
+    cube.physics.position = Point3D::new(0, 0, 400);
+    let mut cube_velocity = Vector3D::new(1, 1, 1);
 
     // Set controls for pausing and manually advancing each frame.
     let mut pause = false;
@@ -98,19 +96,19 @@ fn main() -> ! {
                 window.clear();
 
                 // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if cube.physical_state.position.x.abs() >= 200.0 {
-                    cube_velocity_x = -cube_velocity_x;
+                if cube.physics.position.x.abs() >= 200.0 {
+                    cube_velocity.x = -cube_velocity.x;
                 }
-                if cube.physical_state.position.y.abs() >= 150.0 {
-                    cube_velocity_y = -cube_velocity_y;
+                if cube.physics.position.y.abs() >= 150.0 {
+                    cube_velocity.y = -cube_velocity.y;
                 }
-                if cube.physical_state.position.z >= 500.0 || cube.physical_state.position.z <= 0.0 {
-                    cube_velocity_z = -cube_velocity_z;
+                if cube.physics.position.z >= 500.0 || cube.physics.position.z <= 0.0 {
+                    cube_velocity.z = -cube_velocity.z;
                 }
 
                 // Move and rotate the mesh.
-                cube.set_relative_position(cube_velocity_x, cube_velocity_y, cube_velocity_z);
-                cube.set_relative_orientation(0.5, 0.6, 0.3);
+                cube.physics.position += cube_velocity;
+                cube.physics.orientation += OrientationVector3D::new(1, 0.6, 3);
 
                 // Get a copy of the cube that's been run through the pipeline.
                 // This copy will be in NDC space.
@@ -121,8 +119,8 @@ fn main() -> ! {
 
                 // Generate an edge table for every polygon in the mesh and draw it to the screen buffer.
                 for polygon in cube_pipe.iter_visible_polygons() {
-                    let edge_table = rast::EdgeTable::new(polygon);
-                    window.draw_polygon(&edge_table, window::DrawType::Fill);
+                    
+                    window.draw_polygon(&EdgeTable::new(polygon), DrawType::Fill);
                 }
 
                 // Render the screen buffer.

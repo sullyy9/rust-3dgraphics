@@ -1,4 +1,4 @@
-use crate::{rasterizer as rast, matrix};
+use crate::{mesh::Matrix4X4, rasterizer::EdgeTable};
 
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -27,7 +27,7 @@ pub struct GraphicsWindow {
     near_plane: f64,
     far_plane: f64,
     fov: f64,
-    pub projection_matrix: matrix::TransformMatrix,
+    pub projection_matrix: Matrix4X4,
 }
 impl GraphicsWindow {
     ///
@@ -65,7 +65,7 @@ impl GraphicsWindow {
             let y_mul = 1.0 / f64::tan(fov / 2.0);
             let z1_mul = far_plane / (far_plane - near_plane);
             let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
-            matrix::TransformMatrix([
+            Matrix4X4([
                 [x_mul, 0.0, 0.0, 0.0],
                 [0.0, y_mul, 0.0, 0.0],
                 [0.0, 0.0, z1_mul, 1.0],
@@ -103,7 +103,8 @@ impl GraphicsWindow {
             let z1_mul = self.far_plane / (self.far_plane - self.near_plane);
             let z2_mul =
                 -1.0 * (self.far_plane * self.near_plane) / (self.far_plane - self.near_plane);
-            matrix::TransformMatrix([
+
+            Matrix4X4([
                 [x_mul, 0.0, 0.0, 0.0],
                 [0.0, y_mul, 0.0, 0.0],
                 [0.0, 0.0, z1_mul, 1.0],
@@ -132,7 +133,7 @@ impl GraphicsWindow {
     ///
     /// Draw a polygon using rasterization.
     ///
-    pub fn draw_polygon(&mut self, edge_table: &rast::EdgeTable, style: DrawType) {
+    pub fn draw_polygon(&mut self, edge_table: &EdgeTable, style: DrawType) {
         // Calculate the green intensity from the z part of the polygons normal.
         // the Z normal will be between -1 and 1 with -1 facing the camera
         let colour = {

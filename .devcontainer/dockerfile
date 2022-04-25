@@ -6,6 +6,10 @@ RUN apt -y upgrade
 RUN rustup target add x86_64-pc-windows-gnu
 RUN apt -y install mingw-w64
 
+# Install cargo tools
+RUN cargo install cargo-expand
+RUN cargo install cargo-modules
+
 # Install rust-analizer
 RUN rustup component add rust-src
 RUN rustup component add rustfmt

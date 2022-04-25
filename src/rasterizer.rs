@@ -1,4 +1,4 @@
-use crate::primitives::{vertex, self};
+use crate::mesh::{geometry::Vector3D, RefPoly, Vertex};
 use std::mem::swap;
 
 ///
@@ -42,12 +42,12 @@ impl EdgeList {
     /// # Errors
     /// NoEdge: No edges in the list
     ///
-    pub fn get_edges(&self) -> Result<[&XZPair; 2],> {
+    pub fn get_edges(&self) -> Result<[&XZPair; 2]> {
         match self.list.first() {
             Some(pair1) => {
                 let pair2 = self.list.last().unwrap();
                 Ok([pair1, pair2])
-            },
+            }
             None => Err(Error::NoEdge),
         }
     }
@@ -65,19 +65,15 @@ pub struct EdgeTable {
     pub ymin: i32,
     pub ymax: i32,
 
-    pub normal: vertex::Vector,
+    pub normal: Vector3D,
 }
 // Constructor function and helpers
 impl EdgeTable {
     ///
     /// Create a new EdgeTable from a screen space polygon.
     ///
-    pub fn new(poly: primitives::RefPoly) -> EdgeTable {
-        // Get copies of the referenced values the refpolygon
-        let mut vert1 = *poly.p1;
-        let mut vert2 = *poly.p2;
-        let mut vert3 = *poly.p3;
-        let normal = *poly.normal;
+    pub fn new(poly: RefPoly) -> EdgeTable {
+        let [mut vert1, mut vert2, mut vert3] = poly.verticies;
 
         // Order the verticies in increasing order of X
         if vert2.x < vert1.x && vert2.x < vert3.x {
@@ -91,8 +87,8 @@ impl EdgeTable {
 
         // Add enough elements to the table to encompass the polygon in the Y axis
         let (ymin, ymax) = {
-             let (min, max) = EdgeTable::min_max(vert1.y, vert2.y, vert3.y);
-             (min as i32, max as i32)
+            let (min, max) = EdgeTable::min_max(vert1.y, vert2.y, vert3.y);
+            (min as i32, max as i32)
         };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
@@ -126,7 +122,7 @@ impl EdgeTable {
             table,
             ymin,
             ymax,
-            normal,
+            normal: *poly.normal,
         }
     }
 
@@ -152,7 +148,7 @@ impl EdgeTable {
     ///
     /// Draw a line into an edge table using brezenham's algorithm
     ///
-    fn draw_line(p1: vertex::Vertex, p2: vertex::Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
+    fn draw_line(p1: &Vertex, p2: &Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
         let (x1, y1, z1) = (p1.x as i32, p1.y as i32, p1.z as i32);
         let (x2, y2, z2) = (p2.x as i32, p2.y as i32, p2.z as i32);
 
