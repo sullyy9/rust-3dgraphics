@@ -82,7 +82,7 @@ impl<'a> Iterator for PolyIterator<'a> {
                         &self.vertex_components[polygon_component[1]],
                         &self.vertex_components[polygon_component[2]],
                     ],
-                    normal: &normal_component,
+                    normal: normal_component,
                 }
             };
 

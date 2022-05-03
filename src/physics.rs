@@ -29,7 +29,7 @@ impl PhysicalState {
     ///
     pub fn new() -> PhysicalState {
         PhysicalState {
-            position: Point3D::new(0, 0, 0),
+            position: Point3D::new([0, 0, 0]),
             orientation: Orientation3D::new(0, 0, 0),
         }
     }

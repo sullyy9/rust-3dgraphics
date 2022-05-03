@@ -2,11 +2,11 @@ mod mesh;
 mod physics;
 mod rasterizer;
 mod window;
-mod world_object;
+//mod world_object;
 
 use crate::{
     mesh::Mesh,
-    mesh::geometry::{OrientationVector3D, Point3D, Vector3D},
+    mesh::geometry::{OrientationVector3D, Point3D, Vector3D, Atomic, Atomic3D, Atomic2D, Atomic1D},
     rasterizer::EdgeTable,
     window::{DrawType, GraphicsWindow},
 };
@@ -26,8 +26,8 @@ fn main() -> ! {
     // Set it's initial position and velocities so that it moves around the screen.
     let mut cube = Mesh::default();
     cube.load_cube(100.0);
-    cube.physics.position = Point3D::new(0, 0, 400);
-    let mut cube_velocity = Vector3D::new(1, 1, 1);
+    cube.physics.position = Point3D::new([0, 0, 400]);
+    let mut cube_velocity = Vector3D::new([1, 1, 1]);
 
     // Set controls for pausing and manually advancing each frame.
     let mut pause = false;
@@ -75,13 +75,13 @@ fn main() -> ! {
                 // Redraw if either:
                 // Window is running and a new frame is due according to the framerate timer.
                 // User has manualy requested a new frame.
-                if pause == false && Instant::now() >= time_of_next_frame {
+                if !pause && Instant::now() >= time_of_next_frame {
                     let current_time = Instant::now();
                     time_of_current_frame = current_time;
                     time_of_next_frame = current_time + time_between_frames_min;
 
                     window.redraw();
-                } else if advance_frame == true {
+                } else if advance_frame {
                     advance_frame = false;
 
                     window.redraw();
@@ -96,18 +96,18 @@ fn main() -> ! {
                 window.clear();
 
                 // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if cube.physics.position.x.abs() >= 200.0 {
-                    cube_velocity.x = -cube_velocity.x;
+                if cube.physics.position.x().abs() >= 200.0 {
+                    *cube_velocity.mut_x() = -cube_velocity.x();
                 }
-                if cube.physics.position.y.abs() >= 150.0 {
-                    cube_velocity.y = -cube_velocity.y;
+                if cube.physics.position.y().abs() >= 150.0 {
+                    *cube_velocity.mut_y() = -cube_velocity.y();
                 }
-                if cube.physics.position.z >= 500.0 || cube.physics.position.z <= 0.0 {
-                    cube_velocity.z = -cube_velocity.z;
+                if cube.physics.position.z() >= 500.0 || cube.physics.position.z() <= 0.0 {
+                    *cube_velocity.mut_z() = -cube_velocity.z();
                 }
 
                 // Move and rotate the mesh.
-                cube.physics.position += cube_velocity;
+                cube.physics.position += &cube_velocity;
                 cube.physics.orientation += OrientationVector3D::new(1, 0.6, 3);
 
                 // Get a copy of the cube that's been run through the pipeline.
@@ -133,9 +133,9 @@ fn main() -> ! {
 
                 let mut average = 0;
                 for time in draw_time_average.iter() {
-                    average = average + time;
+                    average += time;
                 }
-                average = average / 100;
+                average /= 100;
 
                 println!("average: {}, last: {}", average, last_time);
             }

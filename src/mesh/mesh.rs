@@ -2,12 +2,14 @@
 //!
 
 use crate::{
-    physics::PhysicalState,
     mesh::{
-        geometry::{BoundingBox, Point, Point3D, Vector, Vector3D},
+        geometry::{BoundingBox, Point, Point3D, Vector, Vector3D, Vector4D},
         IndexPoly, Matrix4X4, RefPoly, Vertex,
     },
+    physics::PhysicalState,
 };
+
+use super::geometry::{Atomic, Atomic1D, Atomic2D, Atomic3D};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -62,14 +64,14 @@ impl Mesh {
         let pos = edge_length / 2.0;
         let neg = -edge_length / 2.0;
 
-        self.verticies.push(Vertex::new(neg, neg, pos, 1));
-        self.verticies.push(Vertex::new(pos, neg, pos, 1));
-        self.verticies.push(Vertex::new(neg, neg, neg, 1));
-        self.verticies.push(Vertex::new(pos, neg, neg, 1));
-        self.verticies.push(Vertex::new(neg, pos, pos, 1));
-        self.verticies.push(Vertex::new(pos, pos, pos, 1));
-        self.verticies.push(Vertex::new(neg, pos, neg, 1));
-        self.verticies.push(Vertex::new(pos, pos, neg, 1));
+        self.verticies.push(Vertex::new([neg, neg, pos, 1.0]));
+        self.verticies.push(Vertex::new([pos, neg, pos, 1.0]));
+        self.verticies.push(Vertex::new([neg, neg, neg, 1.0]));
+        self.verticies.push(Vertex::new([pos, neg, neg, 1.0]));
+        self.verticies.push(Vertex::new([neg, pos, pos, 1.0]));
+        self.verticies.push(Vertex::new([pos, pos, pos, 1.0]));
+        self.verticies.push(Vertex::new([neg, pos, neg, 1.0]));
+        self.verticies.push(Vertex::new([pos, pos, neg, 1.0]));
 
         self.polygons.push(IndexPoly::new(2, 6, 7, 0));
         self.polygons.push(IndexPoly::new(2, 7, 3, 1));
@@ -85,7 +87,7 @@ impl Mesh {
         self.polygons.push(IndexPoly::new(0, 3, 1, 11));
 
         for _ in self.polygons.iter() {
-            self.normals.push(Vector3D::new(0, 0, 0));
+            self.normals.push(Vector3D::new([0, 0, 0]));
         }
     }
 }
@@ -110,12 +112,12 @@ impl Mesh {
         // Find the rotation matrix
         let rotation_matrix = Matrix4X4::new_rotation(self.physics.orientation.vector());
 
-        let position_vector = self.physics.position.vector_from(&Point3D::new(0, 0, 0));
+        let position_vector = self.physics.position.vector_from(&Point3D::new([0, 0, 0]));
 
         // Apply rotation then position to each vertex.
         for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex * rotation_matrix;
-            *vertex = *vertex + position_vector;
+            *vertex = vertex.clone() * rotation_matrix;
+            *vertex += &position_vector.promote();
         }
     }
 
@@ -129,7 +131,7 @@ impl Mesh {
                 let vector2 = self.verticies[indexpoly.verticies[2]]
                     .vector_from(&self.verticies[indexpoly.verticies[0]]);
 
-                Vector3D::normal_to(vector1, vector2)
+                Vector3D::normal_to(vector1, vector2).demote()
             }
         }
     }
@@ -138,15 +140,15 @@ impl Mesh {
     ///
     pub fn project_to_ndc(&mut self, projection_matrix: &Matrix4X4) {
         for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex * (*projection_matrix);
-            *vertex = *vertex / vertex.w;
+            *vertex = vertex.clone() * (*projection_matrix);
+            *vertex /= vertex.w();
         }
     }
 
     /// Copy any polygons that are at least partially within ndc space, into the visible polygon list.
     ///
     pub fn polygons_in_view(&mut self) {
-        let ndc_space = BoundingBox::new(Point3D::new(-1, -1, -1), Point3D::new(1, 1, 1));
+        let ndc_space = BoundingBox::new(Point3D::new([-1, -1, -1]), Point3D::new([1, 1, 1]));
 
         for indexpoly in self.polygons.iter() {
             let vert1_bound = self.verticies[indexpoly.verticies[0]].bound_by(&ndc_space);
@@ -167,9 +169,9 @@ impl Mesh {
         let screen_depth_mul = 1000.0;
 
         for vertex in self.verticies.iter_mut() {
-            vertex.x = (vertex.x + 1.0) * screen_width_mul;
-            vertex.y = (vertex.y + 1.0) * screen_height_mul;
-            vertex.z = screen_depth_mul - (vertex.z * screen_depth_mul);
+            *vertex.mut_x() = (vertex.x() + 1.0) * screen_width_mul;
+            *vertex.mut_y() = (vertex.y() + 1.0) * screen_height_mul;
+            *vertex.mut_z() = screen_depth_mul - (vertex.z() * screen_depth_mul);
         }
     }
 }
@@ -178,7 +180,7 @@ impl Mesh {
 impl Mesh {
     /// Iterate over all polygons immutably.
     ///
-    pub fn iter_all_polygons<'a>(&'a self) -> PolyIterator<'a> {
+    pub fn iter_all_polygons(&self) -> PolyIterator {
         let vertex_list = self.verticies.as_slice();
         let normal_list = self.normals.as_slice();
         let polygon_list = self.polygons.as_slice();
@@ -192,7 +194,7 @@ impl Mesh {
 
     /// Iterate over only visible polygons immutably.
     ///
-    pub fn iter_visible_polygons<'a>(&'a self) -> PolyIterator<'a> {
+    pub fn iter_visible_polygons(&self) -> PolyIterator {
         let vertex_list = self.verticies.as_slice();
         let normal_list = self.normals.as_slice();
         let polygon_list = self.visible_polygons.as_slice();

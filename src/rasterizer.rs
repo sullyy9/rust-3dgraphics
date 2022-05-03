@@ -1,5 +1,5 @@
-use crate::mesh::{geometry::Vector3D, RefPoly, Vertex};
-use std::mem::swap;
+use crate::mesh::{geometry::{Vector3D, Atomic}, RefPoly, Vertex};
+use std::mem::{swap, self};
 
 ///
 /// Error handling
@@ -76,33 +76,33 @@ impl EdgeTable {
         let [mut vert1, mut vert2, mut vert3] = poly.verticies;
 
         // Order the verticies in increasing order of X
-        if vert2.x < vert1.x && vert2.x < vert3.x {
+        if vert2.x() < vert1.x() && vert2.x() < vert3.x() {
             swap(&mut vert1, &mut vert2);
-        } else if vert3.x < vert1.x && vert3.x < vert2.x {
+        } else if vert3.x() < vert1.x() && vert3.x() < vert2.x() {
             swap(&mut vert1, &mut vert3);
         }
-        if vert3.x < vert2.x {
+        if vert3.x() < vert2.x() {
             swap(&mut vert2, &mut vert3);
         }
 
         // Add enough elements to the table to encompass the polygon in the Y axis
         let (ymin, ymax) = {
-            let (min, max) = EdgeTable::min_max(vert1.y, vert2.y, vert3.y);
+            let (min, max) = EdgeTable::min_max(vert1.y(), vert2.y(), vert3.y());
             (min as i32, max as i32)
         };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
         // Declare lines in clockwise order around the polygon but keep the leftmost point first.
         let mut line1 = {
-            let gradient = (vert2.y - vert1.y) / (vert2.x - vert1.x);
+            let gradient = (vert2.y() - vert1.y()) / (vert2.x() - vert1.x());
             (vert1, vert2, gradient)
         };
         let mut line2 = {
-            let gradient = (vert3.y - vert2.y) / (vert3.x - vert2.x);
+            let gradient = (vert3.y() - vert2.y()) / (vert3.x() - vert2.x());
             (vert2, vert3, gradient)
         };
         let mut line3 = {
-            let gradient = (vert3.y - vert1.y) / (vert3.x - vert1.x);
+            let gradient = (vert3.y() - vert1.y()) / (vert3.x() - vert1.x());
             (vert1, vert3, gradient)
         };
 
@@ -117,12 +117,11 @@ impl EdgeTable {
         EdgeTable::draw_line(line2.0, line2.1, &mut table, ymin as i32);
         EdgeTable::draw_line(line3.0, line3.1, &mut table, ymin as i32);
 
-        // let normal = poly.normal;
         EdgeTable {
             table,
             ymin,
             ymax,
-            normal: *poly.normal,
+            normal: poly.normal.clone(),
         }
     }
 
@@ -148,9 +147,9 @@ impl EdgeTable {
     ///
     /// Draw a line into an edge table using brezenham's algorithm
     ///
-    fn draw_line(p1: &Vertex, p2: &Vertex, table: &mut Vec<EdgeList>, yoffset: i32) {
-        let (x1, y1, z1) = (p1.x as i32, p1.y as i32, p1.z as i32);
-        let (x2, y2, z2) = (p2.x as i32, p2.y as i32, p2.z as i32);
+    fn draw_line(p1: &Vertex, p2: &Vertex, table: &mut [EdgeList], yoffset: i32) {
+        let (x1, y1, z1) = (p1.x() as i32, p1.y() as i32, p1.z() as i32);
+        let (x2, y2, z2) = (p2.x() as i32, p2.y() as i32, p2.z() as i32);
 
         let dx = (x2 - x1).abs();
         let dy = (y2 - y1).abs();
@@ -177,16 +176,16 @@ impl EdgeTable {
                 table[(y - yoffset) as usize].push(XZPair { x, z });
 
                 if ygain > 0 {
-                    y = y + ys;
-                    ygain = ygain - (2 * dx);
+                    y += ys;
+                    ygain -= 2 * dx;
                 }
                 if zgain > 0 {
-                    z = z + zs;
-                    zgain = zgain - (2 * dx);
+                    z += zs;
+                    zgain -= 2 * dx;
                 }
 
-                ygain = ygain + (2 * dy);
-                zgain = zgain + (2 * dz);
+                ygain += 2 * dy;
+                zgain += 2 * dz;
             }
         } else if dy >= dx && dy >= dz {
             // Y is the driving axis
@@ -205,16 +204,16 @@ impl EdgeTable {
                 table[(y - yoffset) as usize].push(XZPair { x, z });
 
                 if xgain > 0 {
-                    x = x + xs;
-                    xgain = xgain - (2 * dy);
+                    x += xs;
+                    xgain -= 2 * dy;
                 }
                 if zgain > 0 {
-                    z = z + zs;
-                    zgain = zgain - (2 * dy);
+                    z += zs;
+                    zgain -= 2 * dy;
                 }
 
-                xgain = xgain + (2 * dx);
-                zgain = zgain + (2 * dz);
+                xgain += 2 * dx;
+                zgain += 2 * dz;
             }
         } else {
             // Z is the driving axis
@@ -233,16 +232,16 @@ impl EdgeTable {
                 table[(y - yoffset) as usize].push(XZPair { x, z });
 
                 if xgain > 0 {
-                    x = x + xs;
-                    xgain = xgain - (2 * dz);
+                    x += xs;
+                    xgain -= 2 * dz;
                 }
                 if ygain > 0 {
-                    y = y + ys;
-                    ygain = ygain - (2 * dz);
+                    y += ys;
+                    ygain -= 2 * dz;
                 }
 
-                xgain = xgain + (2 * dx);
-                ygain = ygain + (2 * dy);
+                xgain += 2 * dx;
+                ygain += 2 * dy;
             }
         }
     }

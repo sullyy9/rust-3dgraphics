@@ -29,13 +29,8 @@ pub type RefPoly<'a> = Polygon<&'a Vertex, &'a Vector3D>;
 
 impl<'a> RefPoly<'a> {
     pub fn partially_bound_by(&self, bbox: &BoundingBox) -> bool {
-        if self.verticies[0].bound_by(bbox)
+        self.verticies[0].bound_by(bbox)
             || self.verticies[1].bound_by(bbox)
             || self.verticies[2].bound_by(bbox)
-        {
-            true
-        } else {
-            false
-        }
     }
 }

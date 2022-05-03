@@ -1,120 +1,170 @@
 //! Implementation of a 3D vector type.
 //!
 
-use crate::impl_scaler_arithmetic;
-use std::ops::{Add, Div, DivAssign, Mul, MulAssign};
+use crate::{impl_atomic, impl_atomic_helper};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign};
+
+use super::atomic_traits::{Atomic, Atomic1D, Atomic2D, Atomic3D, Atomic4D};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Type representing a 3D Vector.
+/// Type representing a N dimensional vector.
 ///
-#[derive(Copy, Clone)]
-pub struct Vector3D {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-}
+#[derive(Clone)]
+pub struct VectorBase<const DIM: usize>(pub(crate) [f64; DIM]);
+
+pub type Vector3D = VectorBase<3>;
+pub type Vector4D = VectorBase<4>;
 
 /// Trait containg common behavior for all vector types.
 ///
 pub trait Vector {
-    fn get_x(&self) -> f64 {
-        0.0
-    }
-    fn get_y(&self) -> f64 {
-        0.0
-    }
-    fn get_z(&self) -> f64 {
-        0.0
-    }
+    // type PointType;
 
-    fn normal_to(vector1: Vector3D, vector2: Vector3D) -> Vector3D;
+    fn normal_to<const DIM: usize>(
+        vector1: VectorBase<DIM>,
+        vector2: VectorBase<DIM>,
+    ) -> VectorBase<DIM>;
+
     fn magnitude(&self) -> f64;
+
+    fn promote<const DIM: usize>(&self) -> VectorBase<DIM>;
+    fn demote<const DIM: usize>(&self) -> VectorBase<DIM>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Implementations ////////////////////////////////////////////////////////////
+// Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Default for Vector3D {
+impl<const DIM: usize> Default for VectorBase<DIM> {
     fn default() -> Self {
-        Self {
-            x: Default::default(),
-            y: Default::default(),
-            z: Default::default(),
-        }
+        Self([0.0; DIM])
     }
 }
 
-impl Vector3D {
-    /// Return a new Vector3D object, given it's x, y and z components.
+impl<const DIM: usize> VectorBase<DIM> {
+    /// Return a new point3D object, given it's x, y and z components.
     ///
-    pub fn new<T, U, V>(x: T, y: U, z: V) -> Vector3D
+    pub fn new<T>(components: [T; DIM]) -> Self
     where
         T: Into<f64>,
-        U: Into<f64>,
-        V: Into<f64>,
     {
-        Vector3D {
-            x: x.into(),
-            y: y.into(),
-            z: z.into(),
-        }
+        Self(components.map(|comp| comp.into()))
     }
 }
 
-impl Vector for Vector3D {
-    fn get_x(&self) -> f64 {
-        self.x
-    }
-    fn get_y(&self) -> f64 {
-        self.y
-    }
-    fn get_z(&self) -> f64 {
-        self.z
-    }
+////////////////////////////////////////////////////////////////////////////////
+// Trait Implementations ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+impl_atomic! {impl Atomic3D for Vector3D}
+impl_atomic! {impl Atomic4D for Vector4D}
+
+impl<const D: usize> Vector for VectorBase<D> {
+    // type PointType = Point3D;
 
     /// Return a new Vector3D object, normal to the 2 given vectors.
     ///
-    fn normal_to(vector1: Vector3D, vector2: Vector3D) -> Vector3D {
+    fn normal_to<const DIM: usize>(
+        vector1: VectorBase<DIM>,
+        vector2: VectorBase<DIM>,
+    ) -> VectorBase<DIM> {
         // Calculate the cross product of the 2 given vectors to get a vector perpendicular to both.
-        let mut normal_vector = Vector3D {
-            x: ((vector1.y * vector2.z) - (vector1.z * vector2.y)),
-            y: ((vector1.z * vector2.x) - (vector1.x * vector2.z)),
-            z: ((vector1.x * vector2.y) - (vector1.y * vector2.x)),
-        };
+        let mut normal_vector: VectorBase<DIM> = VectorBase::default();
+        normal_vector.0[0] = (vector1.0[1] * vector2.0[2]) - (vector1.0[2] * vector2.0[1]);
+        normal_vector.0[1] = (vector1.0[2] * vector2.0[0]) - (vector1.0[0] * vector2.0[2]);
+        normal_vector.0[2] = (vector1.0[0] * vector2.0[1]) - (vector1.0[1] * vector2.0[0]);
 
         // Normalise the vector (It's magnitude should be 1).
-        normal_vector /= normal_vector.magnitude();
+        //normal_vector /= normal_vector.magnitude();
+        normal_vector /= f64::sqrt(
+            normal_vector.0[0].powi(2) + normal_vector.0[1].powi(2) + normal_vector.0[2].powi(2),
+        );
         normal_vector
     }
 
     /// Return the magnitude of the vector.
     ///
     fn magnitude(&self) -> f64 {
-        f64::sqrt(self.x.powi(2) + self.y.powi(2) + self.z.powi(2))
+        f64::sqrt(self.0[0].powi(2) + self.0[1].powi(2) + self.0[2].powi(2))
+    }
+
+    /// Promote a vector to a higher dimentional vector where the additional dimensions are initialised as 0.
+    ///
+    fn promote<const DIM: usize>(&self) -> VectorBase<DIM> {
+        let mut new_vector = VectorBase::default();
+
+        new_vector.0[..self.0.len()].clone_from_slice(&self.0);
+        new_vector
+    }
+
+    /// Promote a vector to a lower dimentional vector.
+    ///
+    fn demote<const DIM: usize>(&self) -> VectorBase<DIM> {
+        let mut new_vector = VectorBase::default();
+        let len = new_vector.0.len();
+        new_vector.0.clone_from_slice(&self.0[..len]);
+        new_vector
     }
 }
 
-/// Operator overides
+/// Vector + Vector = Vector
 ///
-/// Adding a vector to a vector results in a new vector.
-///
-impl Add for Vector3D {
+impl<const DIM: usize> Add<&VectorBase<DIM>> for VectorBase<DIM> {
     type Output = Self;
 
-    fn add(self, other: Vector3D) -> Self {
-        Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z,
-        }
+    fn add(self, rhs: &VectorBase<DIM>) -> Self::Output {
+        let mut point = self;
+        point
+            .0
+            .iter_mut()
+            .zip(rhs.0.iter())
+            .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
+        point
     }
 }
 
-impl_scaler_arithmetic! {impl Mul for Vector3D}
-impl_scaler_arithmetic! {impl Div for Vector3D}
-impl_scaler_arithmetic! {impl MulAssign for Vector3D}
-impl_scaler_arithmetic! {impl DivAssign for Vector3D}
+/// Vector += Vector
+///
+impl<const DIM: usize> AddAssign for VectorBase<DIM> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0
+            .iter_mut()
+            .zip(rhs.0.iter())
+            .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
+    }
+}
+
+/// Scalar arithmetic.
+///
+impl<T: Into<f64>, const DIM: usize> Mul<T> for VectorBase<DIM> {
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self {
+        let rhs = rhs.into();
+        Self(self.0.map(|comp| comp * rhs))
+    }
+}
+
+impl<T: Into<f64>, const DIM: usize> MulAssign<T> for VectorBase<DIM> {
+    fn mul_assign(&mut self, rhs: T) {
+        let rhs = rhs.into();
+        self.0.iter_mut().for_each(|comp| *comp *= rhs);
+    }
+}
+
+impl<T: Into<f64>, const DIM: usize> Div<T> for VectorBase<DIM> {
+    type Output = Self;
+    fn div(self, rhs: T) -> Self {
+        let rhs = rhs.into();
+        Self(self.0.map(|comp| comp / rhs))
+    }
+}
+
+impl<T: Into<f64>, const DIM: usize> DivAssign<T> for VectorBase<DIM> {
+    fn div_assign(&mut self, rhs: T) {
+        let rhs = rhs.into();
+        self.0.iter_mut().for_each(|comp| *comp /= rhs);
+    }
+}

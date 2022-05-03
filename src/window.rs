@@ -1,4 +1,4 @@
-use crate::{mesh::Matrix4X4, rasterizer::EdgeTable};
+use crate::{mesh::{Matrix4X4, geometry::Atomic}, rasterizer::EdgeTable};
 
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -41,7 +41,7 @@ impl GraphicsWindow {
                 .with_title("3D Graphics")
                 .with_inner_size(size)
                 .with_min_inner_size(size)
-                .build(&event_loop)
+                .build(event_loop)
                 .unwrap()
         };
 
@@ -137,7 +137,7 @@ impl GraphicsWindow {
         // Calculate the green intensity from the z part of the polygons normal.
         // the Z normal will be between -1 and 1 with -1 facing the camera
         let colour = {
-            let intensity = ((-edge_table.normal.z + 1.0) * 127.0) as u8;
+            let intensity = ((-edge_table.normal.z() + 1.0) * 127.0) as u8;
             [0, intensity, 0, 255]
         };
 
@@ -185,7 +185,7 @@ impl GraphicsWindow {
                                 self.zbuffer[y as usize][x as usize] = z;
                             }
 
-                            z = z + zstep;
+                            z += zstep;
                         }
                     }
                     Err(_error) => {
@@ -204,7 +204,7 @@ impl GraphicsWindow {
                         self.draw_pixel(xzpair.x as u32, y as u32, [255, 0, 0, 255]);
                     }
                 }
-                y = y + 1;
+                y += 1;
             }
         }
     }
