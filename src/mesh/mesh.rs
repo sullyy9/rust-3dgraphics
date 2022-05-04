@@ -117,7 +117,7 @@ impl Mesh {
         // Apply rotation then position to each vertex.
         for vertex in self.verticies.iter_mut() {
             *vertex = vertex.clone() * rotation_matrix;
-            *vertex += &position_vector.promote();
+            vertex.translate(&position_vector.promote());
         }
     }
 
@@ -127,11 +127,11 @@ impl Mesh {
         for indexpoly in self.polygons.iter() {
             self.normals[indexpoly.normal] = {
                 let vector1 = self.verticies[indexpoly.verticies[1]]
-                    .vector_from(&self.verticies[indexpoly.verticies[0]]);
+                    .vector_from(&self.verticies[indexpoly.verticies[0]]).demote();
                 let vector2 = self.verticies[indexpoly.verticies[2]]
-                    .vector_from(&self.verticies[indexpoly.verticies[0]]);
+                    .vector_from(&self.verticies[indexpoly.verticies[0]]).demote();
 
-                Vector3D::normal_to(vector1, vector2).demote()
+                Vector3D::normal_to(vector1, vector2)
             }
         }
     }

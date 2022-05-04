@@ -6,7 +6,7 @@ mod window;
 
 use crate::{
     mesh::Mesh,
-    mesh::geometry::{OrientationVector3D, Point3D, Vector3D, Atomic, Atomic3D, Atomic2D, Atomic1D},
+    mesh::geometry::{OrientationVector3D, Point3D, Vector3D, Atomic, Atomic3D, Atomic2D, Atomic1D, Point},
     rasterizer::EdgeTable,
     window::{DrawType, GraphicsWindow},
 };
@@ -107,7 +107,7 @@ fn main() -> ! {
                 }
 
                 // Move and rotate the mesh.
-                cube.physics.position += &cube_velocity;
+                cube.physics.position.translate(&cube_velocity);
                 cube.physics.orientation += OrientationVector3D::new(1, 0.6, 3);
 
                 // Get a copy of the cube that's been run through the pipeline.

@@ -13,25 +13,29 @@ use super::atomic_traits::{Atomic, Atomic1D, Atomic2D, Atomic3D, Atomic4D};
 /// Type representing a N dimensional vector.
 ///
 #[derive(Clone)]
-pub struct VectorBase<const DIM: usize>(pub(crate) [f64; DIM]);
+pub struct VectorBase<const DIM: usize>(pub [f64; DIM]);
 
 pub type Vector3D = VectorBase<3>;
 pub type Vector4D = VectorBase<4>;
 
 /// Trait containg common behavior for all vector types.
 ///
-pub trait Vector {
+pub trait Vector<const DIM: usize> {
     // type PointType;
 
-    fn normal_to<const DIM: usize>(
+    fn normal_to(
         vector1: VectorBase<DIM>,
         vector2: VectorBase<DIM>,
     ) -> VectorBase<DIM>;
 
     fn magnitude(&self) -> f64;
 
-    fn promote<const DIM: usize>(&self) -> VectorBase<DIM>;
-    fn demote<const DIM: usize>(&self) -> VectorBase<DIM>;
+    fn promote<const NEWDIM: usize>(&self) -> VectorBase<NEWDIM>;
+    fn demote<const NEWDIM: usize>(&self) -> VectorBase<NEWDIM>;
+
+    fn iter(&self) -> std::slice::Iter<'_, f64>;
+
+    fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64>;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,12 +66,12 @@ impl<const DIM: usize> VectorBase<DIM> {
 impl_atomic! {impl Atomic3D for Vector3D}
 impl_atomic! {impl Atomic4D for Vector4D}
 
-impl<const D: usize> Vector for VectorBase<D> {
+impl<const DIM: usize> Vector<DIM> for VectorBase<DIM> {
     // type PointType = Point3D;
 
     /// Return a new Vector3D object, normal to the 2 given vectors.
     ///
-    fn normal_to<const DIM: usize>(
+    fn normal_to(
         vector1: VectorBase<DIM>,
         vector2: VectorBase<DIM>,
     ) -> VectorBase<DIM> {
@@ -93,7 +97,7 @@ impl<const D: usize> Vector for VectorBase<D> {
 
     /// Promote a vector to a higher dimentional vector where the additional dimensions are initialised as 0.
     ///
-    fn promote<const DIM: usize>(&self) -> VectorBase<DIM> {
+    fn promote<const NEWDIM: usize>(&self) -> VectorBase<NEWDIM> {
         let mut new_vector = VectorBase::default();
 
         new_vector.0[..self.0.len()].clone_from_slice(&self.0);
@@ -102,11 +106,19 @@ impl<const D: usize> Vector for VectorBase<D> {
 
     /// Promote a vector to a lower dimentional vector.
     ///
-    fn demote<const DIM: usize>(&self) -> VectorBase<DIM> {
+    fn demote<const NEWDIM: usize>(&self) -> VectorBase<NEWDIM> {
         let mut new_vector = VectorBase::default();
         let len = new_vector.0.len();
         new_vector.0.clone_from_slice(&self.0[..len]);
         new_vector
+    }
+
+    fn iter(&self) -> std::slice::Iter<'_, f64> {
+        self.0.iter()
+    }
+
+    fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
+        self.0.iter_mut()
     }
 }
 
