@@ -1,10 +1,13 @@
-//! This module contains traits that define the shared behaviour between points and vectors of various dimensions.
+//! Implementation of data structures representing dimensions.
 //!
 
 ////////////////////////////////////////////////////////////////////////////////
 // Types & Traits //////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Type that represents axis in a N dimensional coordinate system, with the first 4 specifically
+/// named.
+/// 
 pub enum Dim {
     X,
     Y,

@@ -58,6 +58,7 @@ impl<const D: usize> Point<D> {
     }
 
     /// Return true if the point is bound by the bounding box
+    /// 
     pub fn bound_by(&self, bbox: &BoundingBox) -> bool {
         (bbox.xmin <= self.0[0])
             && (self.0[0] <= bbox.xmax)
@@ -67,10 +68,14 @@ impl<const D: usize> Point<D> {
             && (self.0[2] <= bbox.zmax)
     }
 
+    /// Return an iterator over a point's coordinates.
+    /// 
     pub fn iter(&self) -> std::slice::Iter<'_, f64> {
         self.0.iter()
     }
 
+    /// Return an iterator over a point's coordinates that allows modifying each value.
+    /// 
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
     }

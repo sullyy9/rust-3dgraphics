@@ -14,11 +14,6 @@ use super::{dimension::Dim, point::Point};
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Vector<const D: usize>(pub [f64; D]);
 
-// pub type Vector1D = Vector<1>;
-// pub type Vector2D = Vector<2>;
-// pub type Vector3D = Vector<3>;
-// pub type Vector4D = Vector<4>;
-
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,13 +88,13 @@ impl<const D: usize> Vector<D> {
         new_vector
     }
 
-    /// Returns an iterator over the vector's coordinates.
+    /// Returns an iterator over a vector's coordinates.
     ///
     pub fn iter(&self) -> std::slice::Iter<'_, f64> {
         self.0.iter()
     }
 
-    /// Returns an iterator over the vector's coordinates that allows modifying each value.
+    /// Returns an iterator over a vector's coordinates that allows modifying each value.
     ///
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
