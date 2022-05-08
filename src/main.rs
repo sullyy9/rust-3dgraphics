@@ -5,8 +5,8 @@ mod window;
 //mod world_object;
 
 use crate::{
+    mesh::geometry::{Dim, OrientationVector3D, Point3D, Vector3D},
     mesh::Mesh,
-    mesh::geometry::{OrientationVector3D, Point3D, Vector3D, Atomic, Atomic3D, Atomic2D, Atomic1D, Point},
     rasterizer::EdgeTable,
     window::{DrawType, GraphicsWindow},
 };
@@ -96,14 +96,16 @@ fn main() -> ! {
                 window.clear();
 
                 // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if cube.physics.position.x().abs() >= 200.0 {
-                    *cube_velocity.mut_x() = -cube_velocity.x();
+                if cube.physics.position[Dim::X].abs() >= 200.0 {
+                    cube_velocity[Dim::X] = -cube_velocity[Dim::X];
                 }
-                if cube.physics.position.y().abs() >= 150.0 {
-                    *cube_velocity.mut_y() = -cube_velocity.y();
+                if cube.physics.position[Dim::Y].abs() >= 150.0 {
+                    cube_velocity[Dim::Y] = -cube_velocity[Dim::Y];
                 }
-                if cube.physics.position.z() >= 500.0 || cube.physics.position.z() <= 0.0 {
-                    *cube_velocity.mut_z() = -cube_velocity.z();
+                if cube.physics.position[Dim::Z] >= 500.0
+                    || cube.physics.position[Dim::Z] <= 0.0
+                {
+                    cube_velocity[Dim::Z] = -cube_velocity[Dim::Z];
                 }
 
                 // Move and rotate the mesh.
@@ -119,7 +121,6 @@ fn main() -> ! {
 
                 // Generate an edge table for every polygon in the mesh and draw it to the screen buffer.
                 for polygon in cube_pipe.iter_visible_polygons() {
-                    
                     window.draw_polygon(&EdgeTable::new(polygon), DrawType::Fill);
                 }
 

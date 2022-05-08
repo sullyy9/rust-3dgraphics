@@ -1,5 +1,5 @@
 use super::{
-    geometry::{BoundingBox, Point, Vector3D},
+    geometry::{BoundingBox, Vector3D},
     Vertex,
 };
 

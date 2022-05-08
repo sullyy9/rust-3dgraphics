@@ -1,14 +1,10 @@
 //! Implementation of a 3D point type.
 //!
 
-use super::{
-    atomic_traits::{Atomic, Atomic1D, Atomic2D, Atomic3D, Atomic4D},
-    bounding_box::BoundingBox,
-    vector::VectorBase,
-    Vector,
-};
-use crate::{impl_atomic, impl_atomic_helper};
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use crate::impl_coord_index;
+
+use super::{atomic::Dim, bounding_box::BoundingBox, vector::Vector};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Types & Traits //////////////////////////////////////////////////////////////
@@ -16,39 +12,28 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 /// Type representing N dimensional points.
 ///
-#[derive(PartialEq, Debug, Clone)]
-pub struct PointBase<const DIM: usize>(pub [f64; DIM]);
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub struct Point<const D: usize>(pub [f64; D]);
 
-pub type Point3D = PointBase<3>;
-pub type Point4D = PointBase<4>;
-
-/// Trait containg common behavior for all point types.
-///
-pub trait Point<const DIM: usize> {
-    fn vector_from(&self, point: &PointBase<DIM>) -> VectorBase<DIM>;
-    fn vector_to(&self, point: &PointBase<DIM>) -> VectorBase<DIM>;
-    fn translate(&mut self, vector: &VectorBase<DIM>);
-
-    fn bound_by(&self, bbox: &BoundingBox) -> bool;
-
-    fn iter(&self) -> std::slice::Iter<'_, f64>;
-    fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64>;
-}
+pub type Point1D = Point<1>;
+pub type Point2D = Point<2>;
+pub type Point3D = Point<3>;
+pub type Point4D = Point<4>;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const DIM: usize> Default for PointBase<DIM> {
+impl<const D: usize> Default for Point<D> {
     fn default() -> Self {
-        Self([0.0; DIM])
+        Self([0.0; D])
     }
 }
 
-impl<const DIM: usize> PointBase<DIM> {
+impl<const D: usize> Point<D> {
     /// Return a new point3D object, given it's x, y and z components.
     ///
-    pub fn new<T>(coords: [T; DIM]) -> Self
+    pub fn new<T>(coords: [T; D]) -> Self
     where
         T: Into<f64>,
     {
@@ -60,30 +45,27 @@ impl<const DIM: usize> PointBase<DIM> {
 // Trait Implementations ///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl_atomic! {impl Atomic3D for Point3D}
-impl_atomic! {impl Atomic4D for Point4D}
-
-impl<const DIM: usize> Point<DIM> for PointBase<DIM> {
+impl<const D: usize> Point<D> {
     /// Return a Vector3D describing the transformation from the given point to this point.
     ///
-    fn vector_from(&self, point_from: &PointBase<DIM>) -> VectorBase<DIM> {
+    pub fn vector_from(&self, point_from: &Point<D>) -> Vector<D> {
         self.sub(point_from)
     }
 
     /// Return a Vector3D describing the transformation from this point to the given point.
     ///
-    fn vector_to(&self, point_to: &PointBase<DIM>) -> VectorBase<DIM> {
+    pub fn vector_to(&self, point_to: &Point<D>) -> Vector<D> {
         point_to.sub(self)
     }
 
     /// Translate a point by adding the given vector.
     ///
-    fn translate(&mut self, vector: &VectorBase<DIM>) {
+    pub fn translate(&mut self, vector: &Vector<D>) {
         self.add_assign(vector);
     }
 
     /// Return true if the point is bound by the bounding box
-    fn bound_by(&self, bbox: &BoundingBox) -> bool {
+    pub fn bound_by(&self, bbox: &BoundingBox) -> bool {
         (bbox.xmin <= self.0[0])
             && (self.0[0] <= bbox.xmax)
             && (bbox.ymin <= self.0[1])
@@ -92,14 +74,19 @@ impl<const DIM: usize> Point<DIM> for PointBase<DIM> {
             && (self.0[2] <= bbox.zmax)
     }
 
-    fn iter(&self) -> std::slice::Iter<'_, f64> {
+    pub fn iter(&self) -> std::slice::Iter<'_, f64> {
         self.0.iter()
     }
 
-    fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
     }
 }
+
+impl_coord_index! {impl Index for 1D type Point1D}
+impl_coord_index! {impl Index for 2D type Point2D}
+impl_coord_index! {impl Index for 3D type Point3D}
+impl_coord_index! {impl Index for 4D type Point4D}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Operator Overloads //////////////////////////////////////////////////////////
@@ -107,22 +94,10 @@ impl<const DIM: usize> Point<DIM> for PointBase<DIM> {
 
 /// Point + Vector = Point.
 ///
-impl<const DIM: usize> Add<VectorBase<DIM>> for PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<const D: usize> Add<Vector<D>> for Point<D> {
+    type Output = Point<D>;
 
-    fn add(self, rhs: VectorBase<DIM>) -> Self::Output {
-        let mut pt = self.clone();
-
-        pt.iter_mut()
-            .zip(rhs.iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
-        pt
-    }
-}
-impl<const DIM: usize> Add<&VectorBase<DIM>> for PointBase<DIM> {
-    type Output = PointBase<DIM>;
-
-    fn add(self, rhs: &VectorBase<DIM>) -> Self::Output {
+    fn add(self, rhs: Vector<D>) -> Self::Output {
         let mut pt = self;
         pt.iter_mut()
             .zip(rhs.iter())
@@ -130,22 +105,33 @@ impl<const DIM: usize> Add<&VectorBase<DIM>> for PointBase<DIM> {
         pt
     }
 }
-impl<const DIM: usize> Add<VectorBase<DIM>> for &PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<const D: usize> Add<&Vector<D>> for Point<D> {
+    type Output = Point<D>;
 
-    fn add(self, rhs: VectorBase<DIM>) -> Self::Output {
-        let mut pt = self.clone();
+    fn add(self, rhs: &Vector<D>) -> Self::Output {
+        let mut pt = self;
         pt.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
         pt
     }
 }
-impl<const DIM: usize> Add<&VectorBase<DIM>> for &PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<const D: usize> Add<Vector<D>> for &Point<D> {
+    type Output = Point<D>;
 
-    fn add(self, rhs: &VectorBase<DIM>) -> Self::Output {
-        let mut pt = self.clone();
+    fn add(self, rhs: Vector<D>) -> Self::Output {
+        let mut pt = *self;
+        pt.iter_mut()
+            .zip(rhs.iter())
+            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
+        pt
+    }
+}
+impl<const D: usize> Add<&Vector<D>> for &Point<D> {
+    type Output = Point<D>;
+
+    fn add(self, rhs: &Vector<D>) -> Self::Output {
+        let mut pt = *self;
         pt.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
@@ -155,29 +141,29 @@ impl<const DIM: usize> Add<&VectorBase<DIM>> for &PointBase<DIM> {
 
 /// Point += Vector.
 ///
-impl<const DIM: usize> AddAssign<VectorBase<DIM>> for PointBase<DIM> {
-    fn add_assign(&mut self, rhs: VectorBase<DIM>) {
+impl<const D: usize> AddAssign<Vector<D>> for Point<D> {
+    fn add_assign(&mut self, rhs: Vector<D>) {
         self.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
-impl<const DIM: usize> AddAssign<&VectorBase<DIM>> for PointBase<DIM> {
-    fn add_assign(&mut self, rhs: &VectorBase<DIM>) {
+impl<const D: usize> AddAssign<&Vector<D>> for Point<D> {
+    fn add_assign(&mut self, rhs: &Vector<D>) {
         self.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
-impl<const DIM: usize> AddAssign<VectorBase<DIM>> for &mut PointBase<DIM> {
-    fn add_assign(&mut self, rhs: VectorBase<DIM>) {
+impl<const D: usize> AddAssign<Vector<D>> for &mut Point<D> {
+    fn add_assign(&mut self, rhs: Vector<D>) {
         self.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
-impl<const DIM: usize> AddAssign<&VectorBase<DIM>> for &mut PointBase<DIM> {
-    fn add_assign(&mut self, rhs: &VectorBase<DIM>) {
+impl<const D: usize> AddAssign<&Vector<D>> for &mut Point<D> {
+    fn add_assign(&mut self, rhs: &Vector<D>) {
         self.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
@@ -186,11 +172,11 @@ impl<const DIM: usize> AddAssign<&VectorBase<DIM>> for &mut PointBase<DIM> {
 
 /// Point - Point = Vector.
 ///
-impl<const DIM: usize> Sub<PointBase<DIM>> for PointBase<DIM> {
-    type Output = VectorBase<DIM>;
+impl<const D: usize> Sub<Point<D>> for Point<D> {
+    type Output = Vector<D>;
 
-    fn sub(self, rhs: PointBase<DIM>) -> Self::Output {
-        let mut vector = VectorBase(self.0);
+    fn sub(self, rhs: Point<D>) -> Self::Output {
+        let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
             .zip(rhs.iter())
@@ -198,11 +184,11 @@ impl<const DIM: usize> Sub<PointBase<DIM>> for PointBase<DIM> {
         vector
     }
 }
-impl<const DIM: usize> Sub<&PointBase<DIM>> for PointBase<DIM> {
-    type Output = VectorBase<DIM>;
+impl<const D: usize> Sub<&Point<D>> for Point<D> {
+    type Output = Vector<D>;
 
-    fn sub(self, rhs: &PointBase<DIM>) -> Self::Output {
-        let mut vector = VectorBase(self.0);
+    fn sub(self, rhs: &Point<D>) -> Self::Output {
+        let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
             .zip(rhs.iter())
@@ -210,11 +196,11 @@ impl<const DIM: usize> Sub<&PointBase<DIM>> for PointBase<DIM> {
         vector
     }
 }
-impl<const DIM: usize> Sub<PointBase<DIM>> for &PointBase<DIM> {
-    type Output = VectorBase<DIM>;
+impl<const D: usize> Sub<Point<D>> for &Point<D> {
+    type Output = Vector<D>;
 
-    fn sub(self, rhs: PointBase<DIM>) -> Self::Output {
-        let mut vector = VectorBase(self.0);
+    fn sub(self, rhs: Point<D>) -> Self::Output {
+        let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
             .zip(rhs.iter())
@@ -222,11 +208,11 @@ impl<const DIM: usize> Sub<PointBase<DIM>> for &PointBase<DIM> {
         vector
     }
 }
-impl<const DIM: usize> Sub<&PointBase<DIM>> for &PointBase<DIM> {
-    type Output = VectorBase<DIM>;
+impl<const D: usize> Sub<&Point<D>> for &Point<D> {
+    type Output = Vector<D>;
 
-    fn sub(self, rhs: &PointBase<DIM>) -> Self::Output {
-        let mut vector = VectorBase(self.0);
+    fn sub(self, rhs: &Point<D>) -> Self::Output {
+        let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
             .zip(rhs.iter())
@@ -239,15 +225,15 @@ impl<const DIM: usize> Sub<&PointBase<DIM>> for &PointBase<DIM> {
 ///
 /// Point * Scaler = Point.
 ///
-impl<T: Into<f64>, const DIM: usize> Mul<T> for PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<T: Into<f64>, const D: usize> Mul<T> for Point<D> {
+    type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
         Self::Output::new(self.0.map(|coord| coord.mul(rhs)))
     }
 }
-impl<T: Into<f64>, const DIM: usize> Mul<T> for &PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<T: Into<f64>, const D: usize> Mul<T> for &Point<D> {
+    type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
         Self::Output::new(self.0.map(|coord| coord.mul(rhs)))
@@ -256,13 +242,13 @@ impl<T: Into<f64>, const DIM: usize> Mul<T> for &PointBase<DIM> {
 
 /// Point *= Scaler.
 ///
-impl<T: Into<f64>, const DIM: usize> MulAssign<T> for PointBase<DIM> {
+impl<T: Into<f64>, const D: usize> MulAssign<T> for Point<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
         self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
     }
 }
-impl<T: Into<f64>, const DIM: usize> MulAssign<T> for &mut PointBase<DIM> {
+impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Point<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
         self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
@@ -271,15 +257,15 @@ impl<T: Into<f64>, const DIM: usize> MulAssign<T> for &mut PointBase<DIM> {
 
 /// Point / Scaler = Point.
 ///
-impl<T: Into<f64>, const DIM: usize> Div<T> for PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<T: Into<f64>, const D: usize> Div<T> for Point<D> {
+    type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
         Self::Output::new(self.0.map(|coord| coord.div(rhs)))
     }
 }
-impl<T: Into<f64>, const DIM: usize> Div<T> for &PointBase<DIM> {
-    type Output = PointBase<DIM>;
+impl<T: Into<f64>, const D: usize> Div<T> for &Point<D> {
+    type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
         Self::Output::new(self.0.map(|coord| coord.div(rhs)))
@@ -288,13 +274,13 @@ impl<T: Into<f64>, const DIM: usize> Div<T> for &PointBase<DIM> {
 
 /// Point /= Scaler.
 ///
-impl<T: Into<f64>, const DIM: usize> DivAssign<T> for PointBase<DIM> {
+impl<T: Into<f64>, const D: usize> DivAssign<T> for Point<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
         self.iter_mut().for_each(|coord| coord.div_assign(rhs));
     }
 }
-impl<T: Into<f64>, const DIM: usize> DivAssign<T> for &mut PointBase<DIM> {
+impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Point<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
         self.iter_mut().for_each(|coord| coord.div_assign(rhs));
@@ -307,53 +293,51 @@ impl<T: Into<f64>, const DIM: usize> DivAssign<T> for &mut PointBase<DIM> {
 
 #[cfg(test)]
 mod tests {
+    use crate::mesh::geometry::Vector4D;
+
     use super::*;
-    use rand::prelude::*;
 
     #[test]
     fn test_scaler_mul() {
-        let rand_data: [(f64, [f64; 3]); 10] = rand::thread_rng().gen();
-        for (scaler, coords) in rand_data {
-            assert_eq!(
-                Point3D::new(coords) * scaler,
-                Point3D::new(coords.map(|x| x * scaler))
-            );
-        }
-    }
+        let control_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
+        let mut test_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
 
-    #[test]
-    fn test_scaler_mul_assign() {
-        let data: [(f64, [f64; 3]); 10] = rand::thread_rng().gen();
+        assert_eq!(test_point * 2, control_point);
 
-        for (scaler, coords) in data {
-            let mut point_test = Point3D::new(coords);
-            point_test *= scaler;
-
-            assert_eq!(point_test, Point3D::new(coords.map(|x| x * scaler)));
-        }
+        test_point *= 2;
+        assert_eq!(test_point, control_point);
     }
 
     #[test]
     fn test_scaler_div() {
-        let data: [(f64, [f64; 3]); 10] = rand::thread_rng().gen();
+        let control_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
+        let mut test_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
 
-        for (scaler, coords) in data {
-            assert_eq!(
-                Point3D::new(coords) / scaler,
-                Point3D::new(coords.map(|x| x / scaler))
-            );
-        }
+        assert_eq!(test_point / 2, control_point);
+
+        test_point /= 2;
+        assert_eq!(test_point, control_point);
     }
 
     #[test]
-    fn test_scaler_div_assign() {
-        let data: [(f64, [f64; 3]); 10] = rand::thread_rng().gen();
+    fn test_vector_addition() {
+        let control_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
+        let vector = Vector4D::new([0.22, 25.14, -44.31, -0.12]);
+        let mut test_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
 
-        for (scaler, coords) in data {
-            let mut point_test = Point3D::new(coords);
-            point_test /= scaler;
+        assert_eq!(test_point + vector, control_point);
 
-            assert_eq!(point_test, Point3D::new(coords.map(|x| x / scaler)));
-        }
+        test_point.translate(&vector);
+        assert_eq!(test_point, control_point);
+    }
+
+    #[test]
+    fn test_point_subtraction() {
+        let point1 = Point4D::new([0.22, 25.14, -44.31, -0.12]);
+        let point2 = Point4D::new([0.44, 50.28, -88.62, -0.24]);
+        let vector = Vector4D::new([0.22, 25.14, -44.31, -0.12]);
+
+        assert_eq!(point1.vector_to(&point2), vector);
+        assert_eq!(point1.vector_from(&point2), -vector);
     }
 }

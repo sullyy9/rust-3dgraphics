@@ -9,6 +9,7 @@ RUN apt -y install mingw-w64
 # Install cargo tools
 RUN cargo install cargo-expand
 RUN cargo install cargo-modules
+RUN rustup component add clippy
 
 # Install rust-analizer
 RUN rustup component add rust-src

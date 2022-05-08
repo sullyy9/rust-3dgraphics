@@ -1,7 +1,7 @@
 //! Implementation of a bounding cube type.
 //!
 
-use super::{atomic_traits::Atomic, Point3D};
+use super::{Dim, Point3D};
 
 pub struct BoundingBox {
     pub xmin: f64,
@@ -14,22 +14,22 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn new(p1: Point3D, p2: Point3D) -> BoundingBox {
-        let (xmin, xmax) = if p1.x() <= p2.x() {
-            (p1.x(), p2.x())
+        let (xmin, xmax) = if p1[Dim::X] <= p2[Dim::X] {
+            (p1[Dim::X], p2[Dim::X])
         } else {
-            (p2.x(), p1.x())
+            (p2[Dim::X], p1[Dim::X])
         };
 
-        let (ymin, ymax) = if p1.y() <= p2.y() {
-            (p1.y(), p2.y())
+        let (ymin, ymax) = if p1[Dim::Y] <= p2[Dim::Y] {
+            (p1[Dim::Y], p2[Dim::Y])
         } else {
-            (p2.y(), p1.y())
+            (p2[Dim::Y], p1[Dim::Y])
         };
 
-        let (zmin, zmax) = if p1.z() <= p2.z() {
-            (p1.z(), p2.z())
+        let (zmin, zmax) = if p1[Dim::Z] <= p2[Dim::Z] {
+            (p1[Dim::Z], p2[Dim::Z])
         } else {
-            (p2.z(), p1.z())
+            (p2[Dim::Z], p1[Dim::Z])
         };
 
         BoundingBox {

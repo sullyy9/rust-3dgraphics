@@ -1,5 +1,8 @@
-use crate::mesh::{geometry::{Vector3D, Atomic}, RefPoly, Vertex};
-use std::mem::{swap, self};
+use crate::mesh::{
+    geometry::{Dim, Vector3D},
+    RefPoly, Vertex,
+};
+use std::mem::swap;
 
 ///
 /// Error handling
@@ -76,33 +79,33 @@ impl EdgeTable {
         let [mut vert1, mut vert2, mut vert3] = poly.verticies;
 
         // Order the verticies in increasing order of X
-        if vert2.x() < vert1.x() && vert2.x() < vert3.x() {
+        if vert2[Dim::X] < vert1[Dim::X] && vert2[Dim::X] < vert3[Dim::X] {
             swap(&mut vert1, &mut vert2);
-        } else if vert3.x() < vert1.x() && vert3.x() < vert2.x() {
+        } else if vert3[Dim::X] < vert1[Dim::X] && vert3[Dim::X] < vert2[Dim::X] {
             swap(&mut vert1, &mut vert3);
         }
-        if vert3.x() < vert2.x() {
+        if vert3[Dim::X] < vert2[Dim::X] {
             swap(&mut vert2, &mut vert3);
         }
 
         // Add enough elements to the table to encompass the polygon in the Y axis
         let (ymin, ymax) = {
-            let (min, max) = EdgeTable::min_max(vert1.y(), vert2.y(), vert3.y());
+            let (min, max) = EdgeTable::min_max(vert1[Dim::Y], vert2[Dim::Y], vert3[Dim::Y]);
             (min as i32, max as i32)
         };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
         // Declare lines in clockwise order around the polygon but keep the leftmost point first.
         let mut line1 = {
-            let gradient = (vert2.y() - vert1.y()) / (vert2.x() - vert1.x());
+            let gradient = (vert2[Dim::Y] - vert1[Dim::Y]) / (vert2[Dim::X] - vert1[Dim::X]);
             (vert1, vert2, gradient)
         };
         let mut line2 = {
-            let gradient = (vert3.y() - vert2.y()) / (vert3.x() - vert2.x());
+            let gradient = (vert3[Dim::Y] - vert2[Dim::Y]) / (vert3[Dim::X] - vert2[Dim::X]);
             (vert2, vert3, gradient)
         };
         let mut line3 = {
-            let gradient = (vert3.y() - vert1.y()) / (vert3.x() - vert1.x());
+            let gradient = (vert3[Dim::Y] - vert1[Dim::Y]) / (vert3[Dim::X] - vert1[Dim::X]);
             (vert1, vert3, gradient)
         };
 
@@ -121,7 +124,7 @@ impl EdgeTable {
             table,
             ymin,
             ymax,
-            normal: poly.normal.clone(),
+            normal: *poly.normal,
         }
     }
 
@@ -148,8 +151,8 @@ impl EdgeTable {
     /// Draw a line into an edge table using brezenham's algorithm
     ///
     fn draw_line(p1: &Vertex, p2: &Vertex, table: &mut [EdgeList], yoffset: i32) {
-        let (x1, y1, z1) = (p1.x() as i32, p1.y() as i32, p1.z() as i32);
-        let (x2, y2, z2) = (p2.x() as i32, p2.y() as i32, p2.z() as i32);
+        let (x1, y1, z1) = (p1[Dim::X] as i32, p1[Dim::Y] as i32, p1[Dim::Z] as i32);
+        let (x2, y2, z2) = (p2[Dim::X] as i32, p2[Dim::Y] as i32, p2[Dim::Z] as i32);
 
         let dx = (x2 - x1).abs();
         let dy = (y2 - y1).abs();

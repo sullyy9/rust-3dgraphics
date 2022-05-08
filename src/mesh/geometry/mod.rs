@@ -2,7 +2,7 @@
 //! orientations.
 //!
 
-mod atomic_traits;
+mod atomic;
 mod bounding_box;
 mod impl_arithmetic;
 mod orientation;
@@ -11,10 +11,10 @@ mod point;
 mod vector;
 
 pub use self::{
-    atomic_traits::{Atomic, Atomic1D, Atomic2D, Atomic3D, Atomic4D},
+    atomic::Dim,
     bounding_box::BoundingBox,
     orientation::Orientation3D,
     orientation_vector::OrientationVector3D,
-    point::{Point, Point3D, Point4D},
-    vector::{Vector, Vector3D, Vector4D},
+    point::{Point3D, Point4D},
+    vector::{Vector3D, Vector4D},
 };

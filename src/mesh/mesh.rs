@@ -1,15 +1,16 @@
 //! Implementations of a face-vertex mesh data structure and methods construction methods.
 //!
 
-use crate::{
-    mesh::{
-        geometry::{BoundingBox, Point, Point3D, Vector, Vector3D, Vector4D},
-        IndexPoly, Matrix4X4, RefPoly, Vertex,
-    },
-    physics::PhysicalState,
-};
+use crate::physics::PhysicalState;
 
-use super::geometry::{Atomic, Atomic1D, Atomic2D, Atomic3D};
+use super::{
+    geometry::{
+        BoundingBox,
+        Dim::{W, X, Y, Z},
+        Point3D, Vector3D,
+    },
+    {IndexPoly, Matrix4X4, RefPoly, Vertex},
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -116,7 +117,7 @@ impl Mesh {
 
         // Apply rotation then position to each vertex.
         for vertex in self.verticies.iter_mut() {
-            *vertex = vertex.clone() * rotation_matrix;
+            *vertex = *vertex * rotation_matrix;
             vertex.translate(&position_vector.promote());
         }
     }
@@ -127,9 +128,11 @@ impl Mesh {
         for indexpoly in self.polygons.iter() {
             self.normals[indexpoly.normal] = {
                 let vector1 = self.verticies[indexpoly.verticies[1]]
-                    .vector_from(&self.verticies[indexpoly.verticies[0]]).demote();
+                    .vector_from(&self.verticies[indexpoly.verticies[0]])
+                    .demote();
                 let vector2 = self.verticies[indexpoly.verticies[2]]
-                    .vector_from(&self.verticies[indexpoly.verticies[0]]).demote();
+                    .vector_from(&self.verticies[indexpoly.verticies[0]])
+                    .demote();
 
                 Vector3D::normal_to(vector1, vector2)
             }
@@ -140,8 +143,8 @@ impl Mesh {
     ///
     pub fn project_to_ndc(&mut self, projection_matrix: &Matrix4X4) {
         for vertex in self.verticies.iter_mut() {
-            *vertex = vertex.clone() * (*projection_matrix);
-            *vertex /= vertex.w();
+            *vertex = *vertex * (*projection_matrix);
+            *vertex /= vertex[W];
         }
     }
 
@@ -169,9 +172,9 @@ impl Mesh {
         let screen_depth_mul = 1000.0;
 
         for vertex in self.verticies.iter_mut() {
-            *vertex.mut_x() = (vertex.x() + 1.0) * screen_width_mul;
-            *vertex.mut_y() = (vertex.y() + 1.0) * screen_height_mul;
-            *vertex.mut_z() = screen_depth_mul - (vertex.z() * screen_depth_mul);
+            vertex[X] = (vertex[X] + 1.0) * screen_width_mul;
+            vertex[Y] = (vertex[Y] + 1.0) * screen_height_mul;
+            vertex[Z] = screen_depth_mul - (vertex[Z] * screen_depth_mul);
         }
     }
 }

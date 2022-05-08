@@ -1,4 +1,7 @@
-use crate::{mesh::{Matrix4X4, geometry::Atomic}, rasterizer::EdgeTable};
+use crate::{
+    mesh::{geometry::Dim, Matrix4X4},
+    rasterizer::EdgeTable,
+};
 
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -137,7 +140,7 @@ impl GraphicsWindow {
         // Calculate the green intensity from the z part of the polygons normal.
         // the Z normal will be between -1 and 1 with -1 facing the camera
         let colour = {
-            let intensity = ((-edge_table.normal.z() + 1.0) * 127.0) as u8;
+            let intensity = ((-edge_table.normal[Dim::Z] + 1.0) * 127.0) as u8;
             [0, intensity, 0, 255]
         };
 
