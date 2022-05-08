@@ -1,5 +1,5 @@
 use crate::mesh::{
-    geometry::{Dim, Vector3D},
+    geometry::{Dim, Vector},
     RefPoly, Vertex,
 };
 use std::mem::swap;
@@ -68,7 +68,7 @@ pub struct EdgeTable {
     pub ymin: i32,
     pub ymax: i32,
 
-    pub normal: Vector3D,
+    pub normal: Vector<3>,
 }
 // Constructor function and helpers
 impl EdgeTable {

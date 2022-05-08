@@ -1,5 +1,5 @@
 use super::{
-    geometry::{BoundingBox, Vector3D},
+    geometry::{BoundingBox, Vector},
     Vertex,
 };
 
@@ -25,7 +25,7 @@ impl<T, U> Polygon<T, U> {
 pub type IndexPoly = Polygon<usize, usize>;
 
 /// Polygons where all members are references.
-pub type RefPoly<'a> = Polygon<&'a Vertex, &'a Vector3D>;
+pub type RefPoly<'a> = Polygon<&'a Vertex, &'a Vector<3>>;
 
 impl<'a> RefPoly<'a> {
     pub fn partially_bound_by(&self, bbox: &BoundingBox) -> bool {

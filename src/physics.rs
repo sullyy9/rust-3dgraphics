@@ -1,14 +1,14 @@
 //! Implementation of a structure containg the kinematic states that represent an objects physical location.
 //!
 
-use crate::mesh::geometry::{Orientation3D, Point3D};
+use crate::mesh::geometry::{Orientation3D, Point};
 
 ///
 /// Representation of an objects kinematic state within a cartesian coordinate system.
 ///
 #[derive(Clone)]
 pub struct PhysicalState {
-    pub position: Point3D,
+    pub position: Point<3>,
     pub orientation: Orientation3D,
 }
 
@@ -29,7 +29,7 @@ impl PhysicalState {
     ///
     pub fn new() -> PhysicalState {
         PhysicalState {
-            position: Point3D::new([0, 0, 0]),
+            position: Point::new([0, 0, 0]),
             orientation: Orientation3D::new(0, 0, 0),
         }
     }

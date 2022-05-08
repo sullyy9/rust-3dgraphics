@@ -1,10 +1,9 @@
-//! Implementation of a 3D vector type.
+//! Implementation of a Vector types.
 //!
 
-use crate::impl_coord_index;
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
-use super::{atomic::Dim, point::Point};
+use super::{dimension::Dim, point::Point};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -15,15 +14,10 @@ use super::{atomic::Dim, point::Point};
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Vector<const D: usize>(pub [f64; D]);
 
-pub type Vector1D = Vector<1>;
-pub type Vector2D = Vector<2>;
-pub type Vector3D = Vector<3>;
-pub type Vector4D = Vector<4>;
-
-impl_coord_index! {impl Index for 1D type Vector1D}
-impl_coord_index! {impl Index for 2D type Vector2D}
-impl_coord_index! {impl Index for 3D type Vector3D}
-impl_coord_index! {impl Index for 4D type Vector4D}
+// pub type Vector1D = Vector<1>;
+// pub type Vector2D = Vector<2>;
+// pub type Vector3D = Vector<3>;
+// pub type Vector4D = Vector<4>;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -53,7 +47,7 @@ impl<const D: usize> Vector<D> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Trait Implementations ///////////////////////////////////////////////////////
+// Method Implementations //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<const D: usize> Vector<D> {
@@ -109,6 +103,37 @@ impl<const D: usize> Vector<D> {
     ///
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Operator Overloads //////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+impl<const D: usize> Index<Dim> for Vector<D> {
+    type Output = f64;
+
+    fn index(&self, index: Dim) -> &Self::Output {
+        match index {
+            Dim::X if D >= 1 => &self.0[0],
+            Dim::Y if D >= 2 => &self.0[1],
+            Dim::Z if D >= 3 => &self.0[2],
+            Dim::W if D >= 4 => &self.0[3],
+            Dim::N(n) if D >= n => &self.0[n],
+            _ => panic!(),
+        }
+    }
+}
+impl<const D: usize> IndexMut<Dim> for Vector<D> {
+    fn index_mut(&mut self, index: Dim) -> &mut Self::Output {
+        match index {
+            Dim::X if D >= 1 => &mut self.0[0],
+            Dim::Y if D >= 2 => &mut self.0[1],
+            Dim::Z if D >= 3 => &mut self.0[2],
+            Dim::W if D >= 4 => &mut self.0[3],
+            Dim::N(n) if D >= n => &mut self.0[n],
+            _ => panic!(),
+        }
     }
 }
 
@@ -230,11 +255,11 @@ mod tests {
 
         let coords_scaled = coords.map(|coord| coord * 4.87);
 
-        assert_eq!(Vector4D::new(coords) * scaler, Vector4D::new(coords_scaled));
+        assert_eq!(Vector::new(coords) * scaler, Vector::new(coords_scaled));
 
-        let mut point_mul_assign = Vector4D::new(coords);
+        let mut point_mul_assign = Vector::new(coords);
         point_mul_assign *= scaler;
-        assert_eq!(point_mul_assign, Vector4D::new(coords_scaled));
+        assert_eq!(point_mul_assign, Vector::new(coords_scaled));
     }
 
     #[test]
@@ -244,10 +269,10 @@ mod tests {
 
         let coords_scaled = coords.map(|coord| coord / 4.87);
 
-        assert_eq!(Vector4D::new(coords) / scaler, Vector4D::new(coords_scaled));
+        assert_eq!(Vector::new(coords) / scaler, Vector::new(coords_scaled));
 
-        let mut point_mul_assign = Vector4D::new(coords);
+        let mut point_mul_assign = Vector::new(coords);
         point_mul_assign /= scaler;
-        assert_eq!(point_mul_assign, Vector4D::new(coords_scaled));
+        assert_eq!(point_mul_assign, Vector::new(coords_scaled));
     }
 }

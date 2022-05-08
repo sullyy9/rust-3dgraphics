@@ -7,7 +7,7 @@ use super::{
     geometry::{
         BoundingBox,
         Dim::{W, X, Y, Z},
-        Point3D, Vector3D,
+        Point, Vector,
     },
     {IndexPoly, Matrix4X4, RefPoly, Vertex},
 };
@@ -22,7 +22,7 @@ use super::{
 #[derive(Clone)]
 pub struct Mesh {
     verticies: Vec<Vertex>,
-    normals: Vec<Vector3D>,
+    normals: Vec<Vector<3>>,
     polygons: Vec<IndexPoly>,
     visible_polygons: Vec<IndexPoly>,
 
@@ -31,7 +31,7 @@ pub struct Mesh {
 
 pub struct PolyIterator<'a> {
     vertex_list: &'a [Vertex],
-    normal_list: &'a [Vector3D],
+    normal_list: &'a [Vector<3>],
     polygon_list: &'a [IndexPoly],
 }
 
@@ -88,7 +88,7 @@ impl Mesh {
         self.polygons.push(IndexPoly::new(0, 3, 1, 11));
 
         for _ in self.polygons.iter() {
-            self.normals.push(Vector3D::new([0, 0, 0]));
+            self.normals.push(Vector::new([0, 0, 0]));
         }
     }
 }
@@ -113,7 +113,7 @@ impl Mesh {
         // Find the rotation matrix
         let rotation_matrix = Matrix4X4::new_rotation(self.physics.orientation.vector());
 
-        let position_vector = self.physics.position.vector_from(&Point3D::new([0, 0, 0]));
+        let position_vector = self.physics.position.vector_from(&Point::new([0, 0, 0]));
 
         // Apply rotation then position to each vertex.
         for vertex in self.verticies.iter_mut() {
@@ -134,7 +134,7 @@ impl Mesh {
                     .vector_from(&self.verticies[indexpoly.verticies[0]])
                     .demote();
 
-                Vector3D::normal_to(vector1, vector2)
+                Vector::normal_to(vector1, vector2)
             }
         }
     }
@@ -151,7 +151,7 @@ impl Mesh {
     /// Copy any polygons that are at least partially within ndc space, into the visible polygon list.
     ///
     pub fn polygons_in_view(&mut self) {
-        let ndc_space = BoundingBox::new(Point3D::new([-1, -1, -1]), Point3D::new([1, 1, 1]));
+        let ndc_space = BoundingBox::new(Point::new([-1, -1, -1]), Point::new([1, 1, 1]));
 
         for indexpoly in self.polygons.iter() {
             let vert1_bound = self.verticies[indexpoly.verticies[0]].bound_by(&ndc_space);

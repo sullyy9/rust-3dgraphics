@@ -1,9 +1,7 @@
-//! Implementation of a 3D point type.
+//! Implementation of a Point types.
 //!
 
-use crate::impl_coord_index;
-
-use super::{atomic::Dim, bounding_box::BoundingBox, vector::Vector};
+use super::{dimension::Dim, bounding_box::BoundingBox, vector::Vector};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,11 +12,6 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, 
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Point<const D: usize>(pub [f64; D]);
-
-pub type Point1D = Point<1>;
-pub type Point2D = Point<2>;
-pub type Point3D = Point<3>;
-pub type Point4D = Point<4>;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -42,7 +35,7 @@ impl<const D: usize> Point<D> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Trait Implementations ///////////////////////////////////////////////////////
+// Method Implementations //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<const D: usize> Point<D> {
@@ -83,14 +76,36 @@ impl<const D: usize> Point<D> {
     }
 }
 
-impl_coord_index! {impl Index for 1D type Point1D}
-impl_coord_index! {impl Index for 2D type Point2D}
-impl_coord_index! {impl Index for 3D type Point3D}
-impl_coord_index! {impl Index for 4D type Point4D}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Operator Overloads //////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+
+impl<const D: usize> Index<Dim> for Point<D> {
+    type Output = f64;
+
+    fn index(&self, index: Dim) -> &Self::Output {
+        match index {
+            Dim::X if D >= 1 => &self.0[0],
+            Dim::Y if D >= 2 => &self.0[1],
+            Dim::Z if D >= 3 => &self.0[2],
+            Dim::W if D >= 4 => &self.0[3],
+            Dim::N(n) if D >= n => &self.0[n],
+            _ => panic!(),
+        }
+    }
+}
+impl<const D: usize> IndexMut<Dim> for Point<D> {
+    fn index_mut(&mut self, index: Dim) -> &mut Self::Output {
+        match index {
+            Dim::X if D >= 1 => &mut self.0[0],
+            Dim::Y if D >= 2 => &mut self.0[1],
+            Dim::Z if D >= 3 => &mut self.0[2],
+            Dim::W if D >= 4 => &mut self.0[3],
+            Dim::N(n) if D >= n => &mut self.0[n],
+            _ => panic!(),
+        }
+    }
+}
 
 /// Point + Vector = Point.
 ///
@@ -293,14 +308,14 @@ impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Point<D> {
 
 #[cfg(test)]
 mod tests {
-    use crate::mesh::geometry::Vector4D;
+    use crate::mesh::geometry::Vector;
 
     use super::*;
 
     #[test]
     fn test_scaler_mul() {
-        let control_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
-        let mut test_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
+        let control_point = Point::new([0.44, 50.28, -88.62, -0.24]);
+        let mut test_point = Point::new([0.22, 25.14, -44.31, -0.12]);
 
         assert_eq!(test_point * 2, control_point);
 
@@ -310,8 +325,8 @@ mod tests {
 
     #[test]
     fn test_scaler_div() {
-        let control_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
-        let mut test_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
+        let control_point = Point::new([0.22, 25.14, -44.31, -0.12]);
+        let mut test_point = Point::new([0.44, 50.28, -88.62, -0.24]);
 
         assert_eq!(test_point / 2, control_point);
 
@@ -321,9 +336,9 @@ mod tests {
 
     #[test]
     fn test_vector_addition() {
-        let control_point = Point4D::new([0.44, 50.28, -88.62, -0.24]);
-        let vector = Vector4D::new([0.22, 25.14, -44.31, -0.12]);
-        let mut test_point = Point4D::new([0.22, 25.14, -44.31, -0.12]);
+        let control_point = Point::new([0.44, 50.28, -88.62, -0.24]);
+        let vector = Vector::new([0.22, 25.14, -44.31, -0.12]);
+        let mut test_point = Point::new([0.22, 25.14, -44.31, -0.12]);
 
         assert_eq!(test_point + vector, control_point);
 
@@ -333,9 +348,9 @@ mod tests {
 
     #[test]
     fn test_point_subtraction() {
-        let point1 = Point4D::new([0.22, 25.14, -44.31, -0.12]);
-        let point2 = Point4D::new([0.44, 50.28, -88.62, -0.24]);
-        let vector = Vector4D::new([0.22, 25.14, -44.31, -0.12]);
+        let point1 = Point::new([0.22, 25.14, -44.31, -0.12]);
+        let point2 = Point::new([0.44, 50.28, -88.62, -0.24]);
+        let vector = Vector::new([0.22, 25.14, -44.31, -0.12]);
 
         assert_eq!(point1.vector_to(&point2), vector);
         assert_eq!(point1.vector_from(&point2), -vector);

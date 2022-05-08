@@ -5,7 +5,7 @@ mod window;
 //mod world_object;
 
 use crate::{
-    mesh::geometry::{Dim, OrientationVector3D, Point3D, Vector3D},
+    mesh::geometry::{Dim, OrientationVector3D, Point, Vector},
     mesh::Mesh,
     rasterizer::EdgeTable,
     window::{DrawType, GraphicsWindow},
@@ -26,8 +26,8 @@ fn main() -> ! {
     // Set it's initial position and velocities so that it moves around the screen.
     let mut cube = Mesh::default();
     cube.load_cube(100.0);
-    cube.physics.position = Point3D::new([0, 0, 400]);
-    let mut cube_velocity = Vector3D::new([1, 1, 1]);
+    cube.physics.position = Point::new([0, 0, 400]);
+    let mut cube_velocity = Vector::new([1, 1, 1]);
 
     // Set controls for pausing and manually advancing each frame.
     let mut pause = false;
@@ -102,9 +102,7 @@ fn main() -> ! {
                 if cube.physics.position[Dim::Y].abs() >= 150.0 {
                     cube_velocity[Dim::Y] = -cube_velocity[Dim::Y];
                 }
-                if cube.physics.position[Dim::Z] >= 500.0
-                    || cube.physics.position[Dim::Z] <= 0.0
-                {
+                if cube.physics.position[Dim::Z] >= 500.0 || cube.physics.position[Dim::Z] <= 0.0 {
                     cube_velocity[Dim::Z] = -cube_velocity[Dim::Z];
                 }
 
