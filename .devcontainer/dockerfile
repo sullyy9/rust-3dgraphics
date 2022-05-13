@@ -1,4 +1,10 @@
 FROM rust:latest
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Need this to get access to the latest version of mesa opengl.
+RUN echo "deb http://http.us.debian.org/debian/ testing non-free contrib main" | tee -a /etc/apt/sources.list
+
 RUN apt update
 RUN apt -y upgrade
 
@@ -19,3 +25,17 @@ RUN gzip -d /usr/bin/rust-analyzer.gz
 RUN chmod 755 /usr/bin/rust-analyzer
 
 RUN apt -y install g++ pkg-config
+
+# Install GUI dependancies.
+RUN apt -y install \
+    libxcursor1 \
+    libxrandr2 \
+    libxi6 \
+    libx11-xcb1 \
+    libglfw3 \
+    libegl1 \
+    libpci3 \
+    libxkbcommon0 \
+    mesa-utils
+
+ENV LD_LIBRARY_PATH=/usr/lib/wsl/lib
