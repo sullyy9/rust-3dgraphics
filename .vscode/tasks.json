@@ -1,41 +1,70 @@
 {
-	"version": "2.0.0",
-	"tasks": [
+    "version": "2.0.0",
+    "tasks": [
         {
             "type": "shell",
-            "command": "cargo build --verbose",
+            "command": "cargo",
+            "args": [
+                "build"
+            ],
             "problemMatcher": [
                 "$rustc"
             ],
             "group": "build",
-            "label": "rust: cargo build debug linux"
+            "label": "Build Debug Linux"
         },
         {
             "type": "shell",
-            "command": "cargo build --target=x86_64-pc-windows-gnu",
+            "command": "cargo",
+            "args": [
+                "build",
+                "--target=x86_64-pc-windows-gnu"
+            ],
             "problemMatcher": [
                 "$rustc"
             ],
             "group": "build",
-            "label": "rust: cargo build debug windows"
+            "label": "Build Debug Windows"
         },
         {
             "type": "shell",
-            "command": "cargo build --release",
+            "command": "cargo",
+            "args": [
+                "build",
+                "--release"
+            ],
             "problemMatcher": [
                 "$rustc"
             ],
             "group": "build",
-            "label": "rust: cargo build release linux"
+            "label": "Build Release Linux"
         },
         {
             "type": "shell",
-            "command": "cargo build --target=x86_64-pc-windows-gnu --release",
+            "command": "cargo",
+            "args": [
+                "build",
+                "--target=x86_64-pc-windows-gnu",
+                "--release"
+            ],
             "problemMatcher": [
                 "$rustc"
             ],
             "group": "build",
-            "label": "rust: cargo build release windows"
+            "label": "Build Release Windows"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build",
+            "label": "Run"
         }
     ]
 }
