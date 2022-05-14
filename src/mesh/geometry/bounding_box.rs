@@ -47,6 +47,8 @@ impl<const D: usize> BBox<D> {
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<const D: usize> BBox<D> {
+    /// Return true if a point lies within a bounding box. Return else otherwise
+    ///
     pub fn bounds(&self, point: &Point<D>) -> bool {
         point
             .iter()
