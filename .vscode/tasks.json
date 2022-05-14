@@ -65,6 +65,18 @@
             ],
             "group": "build",
             "label": "Run"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "test"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build",
+            "label": "Test"
         }
     ]
 }
