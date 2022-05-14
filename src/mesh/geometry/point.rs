@@ -32,6 +32,25 @@ impl<const D: usize> Point<D> {
     {
         Self(coords.map(|coord| coord.into()))
     }
+
+    /// Promote a point to a higher dimentional point where the additional dimensions are
+    /// initialised as 0.
+    ///
+    pub fn promote<const ND: usize>(&self) -> Point<ND> {
+        let mut new_point = Point::default();
+
+        new_point.0[..self.0.len()].clone_from_slice(&self.0);
+        new_point
+    }
+
+    /// Demote a point to a lower dimentional point.
+    ///
+    pub fn demote<const ND: usize>(&self) -> Point<ND> {
+        let mut new_point = Point::default();
+        let len = new_point.0.len();
+        new_point.0.clone_from_slice(&self.0[..len]);
+        new_point
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

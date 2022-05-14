@@ -39,6 +39,25 @@ impl<const D: usize> Vector<D> {
     pub fn from_points(tail: Point<D>, head: Point<D>) -> Vector<D> {
         head.sub(tail)
     }
+
+    /// Promote a vector to a higher dimentional vector where the additional dimensions are
+    /// initialised as 0.
+    ///
+    pub fn promote<const ND: usize>(&self) -> Vector<ND> {
+        let mut new_vector = Vector::default();
+
+        new_vector.0[..self.0.len()].clone_from_slice(&self.0);
+        new_vector
+    }
+
+    /// Demote a vector to a lower dimentional vector.
+    ///
+    pub fn demote<const ND: usize>(&self) -> Vector<ND> {
+        let mut new_vector = Vector::default();
+        let len = new_vector.0.len();
+        new_vector.0.clone_from_slice(&self.0[..len]);
+        new_vector
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,25 +86,6 @@ impl<const D: usize> Vector<D> {
     ///
     pub fn magnitude(&self) -> f64 {
         f64::sqrt(self.iter().fold(0.0, |sum, coord| sum + coord.powi(2)))
-    }
-
-    /// Promote a vector to a higher dimentional vector where the additional dimensions are
-    /// initialised as 0.
-    ///
-    pub fn promote<const NEW: usize>(&self) -> Vector<NEW> {
-        let mut new_vector = Vector::default();
-
-        new_vector.0[..self.0.len()].clone_from_slice(&self.0);
-        new_vector
-    }
-
-    /// Promote a vector to a lower dimentional vector.
-    ///
-    pub fn demote<const NEW: usize>(&self) -> Vector<NEW> {
-        let mut new_vector = Vector::default();
-        let len = new_vector.0.len();
-        new_vector.0.clone_from_slice(&self.0[..len]);
-        new_vector
     }
 
     /// Returns an iterator over a vector's coordinates.
