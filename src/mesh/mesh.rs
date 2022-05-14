@@ -5,7 +5,7 @@ use crate::physics::PhysicalState;
 
 use super::{
     geometry::{
-        BoundingBox,
+        BBox,
         Dim::{W, X, Y, Z},
         Point, Vector,
     },
@@ -151,12 +151,12 @@ impl Mesh {
     /// Copy any polygons that are at least partially within ndc space, into the visible polygon list.
     ///
     pub fn polygons_in_view(&mut self) {
-        let ndc_space = BoundingBox::new(Point::new([-1, -1, -1]), Point::new([1, 1, 1]));
+        let ndc_space = BBox::new(Point::new([-1, -1, -1, -1]), Point::new([1, 1, 1, 1]));
 
         for indexpoly in self.polygons.iter() {
-            let vert1_bound = self.verticies[indexpoly.verticies[0]].bound_by(&ndc_space);
-            let vert2_bound = self.verticies[indexpoly.verticies[1]].bound_by(&ndc_space);
-            let vert3_bound = self.verticies[indexpoly.verticies[2]].bound_by(&ndc_space);
+            let vert1_bound = ndc_space.bounds(&self.verticies[indexpoly.verticies[0]]);
+            let vert2_bound = ndc_space.bounds(&self.verticies[indexpoly.verticies[1]]);
+            let vert3_bound = ndc_space.bounds(&self.verticies[indexpoly.verticies[2]]);
 
             if vert1_bound || vert2_bound || vert3_bound {
                 self.visible_polygons.push(indexpoly.to_owned());

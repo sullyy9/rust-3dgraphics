@@ -1,75 +1,24 @@
 //! Implementation of a bounding box type.
 //!
 
-use std::ops::RangeInclusive;
-
-use super::{Dim, Point};
+use super::Point;
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Type representing the limits on a specific axis.
-///
-// #[derive(Debug, Clone, Copy)]
-// struct LimitPair {
-//     min: f64,
-//     max: f64,
-// }
-
 /// Type represneting a N dimensional bounding box.
 ///
 #[derive(Debug, Clone)]
-pub struct BBox<const D: usize>([RangeInclusive<f64>; D]);
-
-pub struct BoundingBox {
-    pub xmin: f64,
-    pub xmax: f64,
-    pub ymin: f64,
-    pub ymax: f64,
-    pub zmin: f64,
-    pub zmax: f64,
-}
+pub struct BBox<const D: usize>([(f64, f64); D]);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl BoundingBox {
-    pub fn new(p1: Point<3>, p2: Point<3>) -> BoundingBox {
-        let (xmin, xmax) = if p1[Dim::X] <= p2[Dim::X] {
-            (p1[Dim::X], p2[Dim::X])
-        } else {
-            (p2[Dim::X], p1[Dim::X])
-        };
-
-        let (ymin, ymax) = if p1[Dim::Y] <= p2[Dim::Y] {
-            (p1[Dim::Y], p2[Dim::Y])
-        } else {
-            (p2[Dim::Y], p1[Dim::Y])
-        };
-
-        let (zmin, zmax) = if p1[Dim::Z] <= p2[Dim::Z] {
-            (p1[Dim::Z], p2[Dim::Z])
-        } else {
-            (p2[Dim::Z], p1[Dim::Z])
-        };
-
-        BoundingBox {
-            xmin,
-            xmax,
-            ymin,
-            ymax,
-            zmin,
-            zmax,
-        }
-    }
-}
-
 impl<const D: usize> Default for BBox<D> {
     fn default() -> Self {
-        let range = (0.0..=0.0);
-        Self([range.clone_into(target); D])
+        Self([(0.0, 0.0); D])
     }
 }
 
@@ -78,14 +27,15 @@ impl<const D: usize> BBox<D> {
     ///
     pub fn new(p1: Point<D>, p2: Point<D>) -> BBox<D> {
         let mut bbox = BBox::default();
+
         bbox.0
             .iter_mut()
             .zip(p1.iter().zip(p2.iter()))
-            .for_each(|(&mut range, (&c1, &c2))| {
+            .for_each(|((min, max), (&c1, &c2))| {
                 if c1 <= c2 {
-                    range = c1..=c2;
+                    (*min, *max) = (c1, c2);
                 } else {
-                    range = c2..=c1;
+                    (*min, *max) = (c2, c1);
                 }
             });
         bbox
@@ -97,11 +47,11 @@ impl<const D: usize> BBox<D> {
 ////////////////////////////////////////////////////////////////////////////////
 
 impl<const D: usize> BBox<D> {
-    pub fn bounds(&self, point: Point<D>) -> bool {
+    pub fn bounds(&self, point: &Point<D>) -> bool {
         point
             .iter()
             .zip(self.0.iter())
-            .all(|(coord, range)| range.contains(coord))
+            .all(|(coord, &(min, max))| (min..=max).contains(coord))
     }
 }
 
@@ -110,4 +60,20 @@ impl<const D: usize> BBox<D> {
 ////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bounding_box() {
+        let bbox = BBox::new(
+            Point::new([0.44, 50.28, -88.62, -0.24]),
+            Point::new([60, 100, -20, 0]),
+        );
+
+        let point_bound = Point::new([32.6, 50.29, -50.3, -0.1]);
+        let point_not_bound = Point::new([32.6, 0.0, -50.3, -0.1]);
+
+        assert!(bbox.bounds(&point_bound));
+        assert!(!bbox.bounds(&point_not_bound));
+    }
+}

@@ -2,8 +2,8 @@
 //! orientations.
 //!
 
-mod dimension;
 mod bounding_box;
+mod dimension;
 mod impl_arithmetic;
 mod orientation;
 mod orientation_vector;
@@ -11,6 +11,6 @@ mod point;
 mod vector;
 
 pub use self::{
-    dimension::Dim, bounding_box::BoundingBox, orientation::Orientation3D,
+    bounding_box::BBox, dimension::Dim, orientation::Orientation3D,
     orientation_vector::OrientationVector3D, point::Point, vector::Vector,
 };

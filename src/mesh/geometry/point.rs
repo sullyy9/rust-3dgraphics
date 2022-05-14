@@ -1,7 +1,7 @@
 //! Implementation of a Point types.
 //!
 
-use super::{dimension::Dim, bounding_box::BoundingBox, vector::Vector};
+use super::{dimension::Dim, vector::Vector};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,25 +57,14 @@ impl<const D: usize> Point<D> {
         self.add_assign(vector);
     }
 
-    /// Return true if the point is bound by the bounding box
-    /// 
-    pub fn bound_by(&self, bbox: &BoundingBox) -> bool {
-        (bbox.xmin <= self.0[0])
-            && (self.0[0] <= bbox.xmax)
-            && (bbox.ymin <= self.0[1])
-            && (self.0[1] <= bbox.ymax)
-            && (bbox.zmin <= self.0[2])
-            && (self.0[2] <= bbox.zmax)
-    }
-
     /// Return an iterator over a point's coordinates.
-    /// 
+    ///
     pub fn iter(&self) -> std::slice::Iter<'_, f64> {
         self.0.iter()
     }
 
     /// Return an iterator over a point's coordinates that allows modifying each value.
-    /// 
+    ///
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
     }

@@ -1,7 +1,4 @@
-use super::{
-    geometry::{BoundingBox, Vector},
-    Vertex,
-};
+use super::{geometry::Vector, Vertex};
 
 ///
 /// Polygon
@@ -26,11 +23,3 @@ pub type IndexPoly = Polygon<usize, usize>;
 
 /// Polygons where all members are references.
 pub type RefPoly<'a> = Polygon<&'a Vertex, &'a Vector<3>>;
-
-impl<'a> RefPoly<'a> {
-    pub fn partially_bound_by(&self, bbox: &BoundingBox) -> bool {
-        self.verticies[0].bound_by(bbox)
-            || self.verticies[1].bound_by(bbox)
-            || self.verticies[2].bound_by(bbox)
-    }
-}
