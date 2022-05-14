@@ -4,7 +4,6 @@
 
 mod bounding_box;
 mod dimension;
-mod impl_arithmetic;
 mod orientation;
 mod orientation_vector;
 mod point;
