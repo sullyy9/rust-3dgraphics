@@ -76,16 +76,23 @@ impl<const D: usize> Point<D> {
         self.add_assign(vector);
     }
 
-    /// Return an iterator over a point's coordinates.
-    ///
-    pub fn iter(&self) -> std::slice::Iter<'_, f64> {
-        self.0.iter()
-    }
-
-    /// Return an iterator over a point's coordinates that allows modifying each value.
+    /// Return an iterator over a mutable slice, containing a point's coordinates.
     ///
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Trait Implementations ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a, const D: usize> IntoIterator for &'a Point<D> {
+    type Item = f64;
+    type IntoIter = std::array::IntoIter<Self::Item, D>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
@@ -127,6 +134,7 @@ impl<const D: usize> Add<Vector<D>> for Point<D> {
 
     fn add(self, rhs: Vector<D>) -> Self::Output {
         let mut pt = self;
+
         pt.iter_mut()
             .zip(rhs.iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
@@ -207,7 +215,7 @@ impl<const D: usize> Sub<Point<D>> for Point<D> {
         let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
         vector
     }
@@ -219,7 +227,7 @@ impl<const D: usize> Sub<&Point<D>> for Point<D> {
         let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
         vector
     }
@@ -231,7 +239,7 @@ impl<const D: usize> Sub<Point<D>> for &Point<D> {
         let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
         vector
     }
@@ -243,7 +251,7 @@ impl<const D: usize> Sub<&Point<D>> for &Point<D> {
         let mut vector = Vector::new(self.0);
         vector
             .iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
         vector
     }

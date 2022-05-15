@@ -30,8 +30,8 @@ impl<const D: usize> BBox<D> {
 
         bbox.0
             .iter_mut()
-            .zip(p1.iter().zip(p2.iter()))
-            .for_each(|((min, max), (&c1, &c2))| {
+            .zip(p1.into_iter().zip(p2.into_iter()))
+            .for_each(|((min, max), (c1, c2))| {
                 if c1 <= c2 {
                     (*min, *max) = (c1, c2);
                 } else {
@@ -51,9 +51,9 @@ impl<const D: usize> BBox<D> {
     ///
     pub fn bounds(&self, point: &Point<D>) -> bool {
         point
-            .iter()
+            .into_iter()
             .zip(self.0.iter())
-            .all(|(coord, &(min, max))| (min..=max).contains(coord))
+            .all(|(coord, &(min, max))| (min..=max).contains(&coord))
     }
 }
 
