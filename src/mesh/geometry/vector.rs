@@ -102,7 +102,7 @@ impl<const D: usize> Vector<D> {
 
     /// Return a new point where each coordinate has been modified acording to the closure f.
     /// 
-    pub fn map<F>(&self, f: F) -> Vector<D>
+    fn map<F>(&self, f: F) -> Vector<D>
     where
     F: FnMut(f64) -> f64, {
         Vector::new(self.0.map(f))
