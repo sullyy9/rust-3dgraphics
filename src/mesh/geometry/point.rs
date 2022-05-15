@@ -154,7 +154,7 @@ impl<const D: usize> Add<Vector<D>> for Point<D> {
         let mut pt = self;
 
         pt.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
         pt
     }
@@ -165,7 +165,7 @@ impl<const D: usize> Add<&Vector<D>> for Point<D> {
     fn add(self, rhs: &Vector<D>) -> Self::Output {
         let mut pt = self;
         pt.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
         pt
     }
@@ -176,7 +176,7 @@ impl<const D: usize> Add<Vector<D>> for &Point<D> {
     fn add(self, rhs: Vector<D>) -> Self::Output {
         let mut pt = *self;
         pt.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
         pt
     }
@@ -187,7 +187,7 @@ impl<const D: usize> Add<&Vector<D>> for &Point<D> {
     fn add(self, rhs: &Vector<D>) -> Self::Output {
         let mut pt = *self;
         pt.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
         pt
     }
@@ -198,28 +198,28 @@ impl<const D: usize> Add<&Vector<D>> for &Point<D> {
 impl<const D: usize> AddAssign<Vector<D>> for Point<D> {
     fn add_assign(&mut self, rhs: Vector<D>) {
         self.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
 impl<const D: usize> AddAssign<&Vector<D>> for Point<D> {
     fn add_assign(&mut self, rhs: &Vector<D>) {
         self.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
 impl<const D: usize> AddAssign<Vector<D>> for &mut Point<D> {
     fn add_assign(&mut self, rhs: Vector<D>) {
         self.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }
 impl<const D: usize> AddAssign<&Vector<D>> for &mut Point<D> {
     fn add_assign(&mut self, rhs: &Vector<D>) {
         self.iter_mut()
-            .zip(rhs.iter())
+            .zip(rhs.into_iter())
             .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
     }
 }

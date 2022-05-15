@@ -85,13 +85,7 @@ impl<const D: usize> Vector<D> {
     /// Return the magnitude of the vector.
     ///
     pub fn magnitude(&self) -> f64 {
-        f64::sqrt(self.iter().fold(0.0, |sum, coord| sum + coord.powi(2)))
-    }
-
-    /// Returns an iterator over a vector's coordinates.
-    ///
-    pub fn iter(&self) -> std::slice::Iter<'_, f64> {
-        self.0.iter()
+        f64::sqrt(self.into_iter().fold(0.0, |sum, coord| sum + coord.powi(2)))
     }
 
     /// Returns an iterator over a vector's coordinates that allows modifying each value.
@@ -101,10 +95,11 @@ impl<const D: usize> Vector<D> {
     }
 
     /// Return a new vector where each coordinate has been modified acording to the closure f.
-    /// 
+    ///
     fn map<F>(&self, f: F) -> Vector<D>
     where
-    F: FnMut(f64) -> f64, {
+        F: FnMut(f64) -> f64,
+    {
         Vector::new(self.0.map(f))
     }
 
@@ -170,9 +165,8 @@ impl<const D: usize> Add<&Vector<D>> for Vector<D> {
     fn add(self, rhs: &Vector<D>) -> Self::Output {
         let mut point = self;
         point
-            .0
             .iter_mut()
-            .zip(rhs.0.iter())
+            .zip(rhs.into_iter())
             .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
         point
     }
@@ -182,9 +176,8 @@ impl<const D: usize> Add<&Vector<D>> for Vector<D> {
 ///
 impl<const D: usize> AddAssign for Vector<D> {
     fn add_assign(&mut self, rhs: Self) {
-        self.0
-            .iter_mut()
-            .zip(rhs.0.iter())
+        self.iter_mut()
+            .zip(rhs.into_iter())
             .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
     }
 }
