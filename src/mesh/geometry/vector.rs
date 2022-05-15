@@ -100,12 +100,21 @@ impl<const D: usize> Vector<D> {
         self.0.iter_mut()
     }
 
-    /// Return a new point where each coordinate has been modified acording to the closure f.
+    /// Return a new vector where each coordinate has been modified acording to the closure f.
     /// 
     fn map<F>(&self, f: F) -> Vector<D>
     where
     F: FnMut(f64) -> f64, {
         Vector::new(self.0.map(f))
+    }
+
+    /// Apply the closure f to each of a vector's coordinates.
+    ///
+    fn for_each_coord<F>(&mut self, f: F)
+    where
+        F: FnMut(&mut f64),
+    {
+        self.iter_mut().for_each(f);
     }
 }
 
@@ -204,13 +213,13 @@ impl<T: Into<f64>, const D: usize> Mul<T> for &Vector<D> {
 impl<T: Into<f64>, const D: usize> MulAssign<T> for Vector<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
+        self.for_each_coord(|coord| coord.mul_assign(rhs));
     }
 }
 impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Vector<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
+        self.for_each_coord(|coord| coord.mul_assign(rhs));
     }
 }
 
@@ -236,13 +245,13 @@ impl<T: Into<f64>, const D: usize> Div<T> for &Vector<D> {
 impl<T: Into<f64>, const D: usize> DivAssign<T> for Vector<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.div_assign(rhs));
+        self.for_each_coord(|coord| coord.div_assign(rhs));
     }
 }
 impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Vector<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.div_assign(rhs));
+        self.for_each_coord(|coord| coord.div_assign(rhs));
     }
 }
 
@@ -252,7 +261,7 @@ impl<const D: usize> Neg for Vector<D> {
     type Output = Vector<D>;
 
     fn neg(self) -> Self::Output {
-        Self::Output::new(self.0.map(|coord| coord.neg()))
+        self.map(|coord| coord.neg())
     }
 }
 

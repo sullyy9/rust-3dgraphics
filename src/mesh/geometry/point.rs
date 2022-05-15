@@ -83,11 +83,21 @@ impl<const D: usize> Point<D> {
     }
 
     /// Return a new point where each coordinate has been modified acording to the closure f.
-    /// 
+    ///
     fn map<F>(&self, f: F) -> Point<D>
     where
-    F: FnMut(f64) -> f64, {
+        F: FnMut(f64) -> f64,
+    {
         Point::new(self.0.map(f))
+    }
+
+    /// Apply the closure f to each of a point's coordinates.
+    ///
+    fn for_each_coord<F>(&mut self, f: F)
+    where
+        F: FnMut(&mut f64),
+    {
+        self.iter_mut().for_each(f);
     }
 }
 
@@ -289,13 +299,13 @@ impl<T: Into<f64>, const D: usize> Mul<T> for &Point<D> {
 impl<T: Into<f64>, const D: usize> MulAssign<T> for Point<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
+        self.for_each_coord(|coord| coord.mul_assign(rhs));
     }
 }
 impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Point<D> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.mul_assign(rhs));
+        self.for_each_coord(|coord| coord.mul_assign(rhs));
     }
 }
 
@@ -321,13 +331,13 @@ impl<T: Into<f64>, const D: usize> Div<T> for &Point<D> {
 impl<T: Into<f64>, const D: usize> DivAssign<T> for Point<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.div_assign(rhs));
+        self.for_each_coord(|coord| coord.div_assign(rhs));
     }
 }
 impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Point<D> {
     fn div_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
-        self.iter_mut().for_each(|coord| coord.div_assign(rhs));
+        self.for_each_coord(|coord| coord.div_assign(rhs));
     }
 }
 
