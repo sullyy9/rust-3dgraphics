@@ -81,6 +81,14 @@ impl<const D: usize> Point<D> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
         self.0.iter_mut()
     }
+
+    /// Return a new point where each coordinate has been modified acording to the closure f.
+    /// 
+    pub fn map<F>(&self, f: F) -> Point<D>
+    where
+    F: FnMut(f64) -> f64, {
+        Point::new(self.0.map(f))
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,14 +273,14 @@ impl<T: Into<f64>, const D: usize> Mul<T> for Point<D> {
     type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
-        Self::Output::new(self.0.map(|coord| coord.mul(rhs)))
+        self.map(|coord| coord.mul(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Mul<T> for &Point<D> {
     type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
-        Self::Output::new(self.0.map(|coord| coord.mul(rhs)))
+        self.map(|coord| coord.mul(rhs))
     }
 }
 
@@ -297,14 +305,14 @@ impl<T: Into<f64>, const D: usize> Div<T> for Point<D> {
     type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
-        Self::Output::new(self.0.map(|coord| coord.div(rhs)))
+        self.map(|coord| coord.div(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Div<T> for &Point<D> {
     type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
         let rhs = rhs.into();
-        Self::Output::new(self.0.map(|coord| coord.div(rhs)))
+        self.map(|coord| coord.div(rhs))
     }
 }
 
