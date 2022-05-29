@@ -4,6 +4,7 @@
 
 mod bounding_box;
 mod dimension;
+mod matrix;
 mod orientation;
 mod orientation_vector;
 mod point;

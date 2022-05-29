@@ -84,6 +84,8 @@ impl<const D: usize> Point<D> {
 
     /// Return a new point where each coordinate has been modified acording to the closure f.
     ///
+    /// # Arguments
+    /// * f - A closure which will be called on each coordinate.
     fn map<F>(&self, f: F) -> Point<D>
     where
         F: FnMut(f64) -> f64,
