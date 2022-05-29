@@ -20,8 +20,8 @@
 		"rust-lang.rust-analyzer",
 		"bungcip.better-toml",
         "serayuzgur.crates",
-        "usernamehw.errorlens"
-        
+        "usernamehw.errorlens",
+        "ms-azuretools.vscode-docker"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

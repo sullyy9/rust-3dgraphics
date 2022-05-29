@@ -1,4 +1,4 @@
-//! Implementation of a Point types.
+//! Implementation of Point types.
 //!
 
 use super::{dimension::Dim, vector::Vector};
@@ -93,6 +93,9 @@ impl<const D: usize> Point<D> {
 
     /// Apply the closure f to each of a point's coordinates.
     ///
+    /// # Arguments
+    /// * f - A closure which will be called on each coordinate.
+    /// 
     fn for_each_coord<F>(&mut self, f: F)
     where
         F: FnMut(&mut f64),

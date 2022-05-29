@@ -1,4 +1,4 @@
-//! Implementation of a Vector types.
+//! Implementation of Vector types.
 //!
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
