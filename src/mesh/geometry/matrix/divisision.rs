@@ -7,46 +7,31 @@ use super::Matrix;
 
 /// Scalar * Matrix multiplication.
 /// 
-impl<T: Into<f64>, const R: usize, const C: usize> Div<T> for Matrix<R, C> {
-    type Output = Matrix<R, C>;
+macro_rules! mul_scaler_impl {
+    ({$lhs_t:ty} / {T}) => {
+        impl<T: Into<f64>, const R: usize, const C: usize> Div<T> for $lhs_t {
+            type Output = Matrix<R, C>;
 
-    fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|a| a / rhs)
-    }
+            fn div(self, rhs: T) -> Self::Output {
+                let rhs = rhs.into();
+                self.map(|lhs| lhs.div(rhs))
+            }
+        }
+    };
+    ({$lhs_t:ty} /= T) => {
+        impl<T: Into<f64>, const R: usize, const C: usize> DivAssign<T> for $lhs_t {
+            fn div_assign(&mut self, rhs: T) {
+                let rhs = rhs.into();
+                self.iter_mut().for_each(|lhs| lhs.div_assign(rhs));
+            }
+        }
+    };
 }
 
-impl<T: Into<f64>,const R: usize, const C: usize> Div<T> for &Matrix<R, C> {
-    type Output = Matrix<R, C>;
-
-    fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|a| a / rhs)
-    }
-}
-
-impl<T: Into<f64>,const R: usize, const C: usize> Div<T> for &mut Matrix<R, C> {
-    type Output = Matrix<R, C>;
-
-    fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|a| a / rhs)
-    }
-}
-
-impl<T: Into<f64>, const R: usize, const C: usize> DivAssign<T> for Matrix<R, C> {
-    fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each(|a| a.div_assign(rhs));
-    }
-}
-
-impl<T: Into<f64>,const R: usize, const C: usize> DivAssign<T> for &mut Matrix<R, C> {
-    fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each(|a| a.div_assign(rhs));
-    }
-}
+mul_scaler_impl! {{Matrix<R,C>} / {T}}
+mul_scaler_impl! {{&Matrix<R,C>} / {T}}
+mul_scaler_impl! {{Matrix<R,C>} /= T}
+mul_scaler_impl! {{&mut Matrix<R,C>} /= T}
 
 /// Matrix * Matrix multiplication.
 /// 
