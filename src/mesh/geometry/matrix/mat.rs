@@ -22,8 +22,11 @@ impl<const R: usize, const C: usize> Default for Matrix<R, C> {
 }
 
 impl<const R: usize, const C: usize> Matrix<R, C> {
-    pub fn new(data: [[f64; C]; R]) -> Self {
-        Matrix(data)
+
+    pub fn new<T>(data: [[T; C]; R]) -> Self
+    where
+        T: Into<f64>, {
+        Self(data.map(|row| row.map(|i| i.into())))
     }
 }
 
@@ -60,15 +63,13 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub(super) fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; C]>>
-    {
+    pub(super) fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; C]>> {
         self.0.iter().flatten()
     }
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub(super) fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; C]>>
-    {
+    pub(super) fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; C]>> {
         self.0.iter_mut().flatten()
     }
 }
@@ -142,9 +143,17 @@ mod tests {
     fn test_sub() {
         let mut mat1 = Matrix([[0.0, 1.0, 2.0, 3.0], [4.0, 7.0, 6.0, 7.0]]);
         let mat2 = Matrix([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]);
+
         assert_eq!((mat1 - mat2)[1][1], 2.0);
 
-        mat1 += mat2;
+        mat1 -= mat2;
         assert_eq!(mat1[1][1], 2.0);
+    }
+
+    #[test]
+    fn test_mul() {
+        let mat1 = Matrix::new([[0, 1, 2], [3, 4, 5]]);
+        let mat2 = Matrix::new([[6, 7], [8, 9], [10, 11]]);
+        assert_eq!((mat1 * mat2), Matrix::new([[28, 31], [100, 112]]));
     }
 }
