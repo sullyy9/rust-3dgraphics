@@ -6,7 +6,7 @@ use std::ops::{Sub, SubAssign};
 use super::Matrix;
 
 macro_rules! add_impl {
-    ({$lhs_t:ty} + {$rhs_t:ty}) => {
+    ({$lhs_t:ty} - {$rhs_t:ty}) => {
         impl<const R: usize, const C: usize> Sub<$rhs_t> for $lhs_t {
             type Output = Matrix<R, C>;
 
@@ -19,7 +19,7 @@ macro_rules! add_impl {
             }
         }
     };
-    ({$lhs_t:ty} += {$rhs_t:ty}) => {
+    ({$lhs_t:ty} -= {$rhs_t:ty}) => {
         impl<const R: usize, const C: usize> SubAssign<$rhs_t> for $lhs_t {
             fn sub_assign(&mut self, rhs: $rhs_t) {
                 self.iter_mut()
@@ -30,12 +30,12 @@ macro_rules! add_impl {
     };
 }
 
-add_impl! {{Matrix<R, C>} + {Matrix<R, C>}}
-add_impl! {{Matrix<R, C>} + {&Matrix<R, C>}}
-add_impl! {{&Matrix<R, C>} + {Matrix<R, C>}}
-add_impl! {{&Matrix<R, C>} + {&Matrix<R, C>}}
+add_impl! {{Matrix<R, C>} - {Matrix<R, C>}}
+add_impl! {{Matrix<R, C>} - {&Matrix<R, C>}}
+add_impl! {{&Matrix<R, C>} - {Matrix<R, C>}}
+add_impl! {{&Matrix<R, C>} - {&Matrix<R, C>}}
 
-add_impl! {{Matrix<R, C>} += {Matrix<R, C>}}
-add_impl! {{Matrix<R, C>} += {&Matrix<R, C>}}
-add_impl! {{&mut Matrix<R, C>} += {Matrix<R, C>}}
-add_impl! {{&mut Matrix<R, C>} += {&Matrix<R, C>}}
+add_impl! {{Matrix<R, C>} -= {Matrix<R, C>}}
+add_impl! {{Matrix<R, C>} -= {&Matrix<R, C>}}
+add_impl! {{&mut Matrix<R, C>} -= {Matrix<R, C>}}
+add_impl! {{&mut Matrix<R, C>} -= {&Matrix<R, C>}}
