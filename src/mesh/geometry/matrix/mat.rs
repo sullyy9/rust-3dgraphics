@@ -130,6 +130,12 @@ mod tests {
     }
 
     #[test]
+    fn test_scalar_div() {
+        let mat = Matrix([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]) / 4;
+        assert_eq!(mat[1][1], (5.0 / 4.0));
+    }
+
+    #[test]
     fn test_add() {
         let mut mat1 = Matrix([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]);
         let mat2 = Matrix([[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]);
