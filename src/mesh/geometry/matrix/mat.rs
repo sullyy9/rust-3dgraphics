@@ -179,5 +179,9 @@ mod tests {
         let mat1 = Matrix::new([[0, 1, 2], [3, 4, 5]]);
         let mat2 = Matrix::new([[6, 7], [8, 9], [10, 11]]);
         assert_eq!((mat1 * mat2), Matrix::new([[28, 31], [100, 112]]));
+
+        let mut mat3 = Matrix::new([[2, 3], [5, 4]]);
+        mat3 *= mat3;
+        assert_eq!(mat3, Matrix::new([[19, 18], [30, 31]]));
     }
 }
