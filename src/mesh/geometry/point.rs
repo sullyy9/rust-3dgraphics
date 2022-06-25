@@ -1,7 +1,7 @@
 //! Implementation of Point types.
 //!
 
-use super::{dimension::Dim, vector::Vector};
+use super::{dimension::Dim, vector::Vector, matrix::Matrix};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -11,7 +11,9 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, 
 /// Type representing N dimensional points.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Point<const D: usize>(pub [f64; D]);
+//pub struct Point<const D: usize>(pub [f64; D]);
+
+pub struct Point<const D: usize>(Matrix<1, D>);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -19,7 +21,7 @@ pub struct Point<const D: usize>(pub [f64; D]);
 
 impl<const D: usize> Default for Point<D> {
     fn default() -> Self {
-        Self([0.0; D])
+        Self(Matrix::new([[0.0; D]]))
     }
 }
 
@@ -30,7 +32,7 @@ impl<const D: usize> Point<D> {
     where
         T: Into<f64>,
     {
-        Self(coords.map(|coord| coord.into()))
+        Self(Matrix::new([coords.map(|coord| coord.into())]))
     }
 
     /// Promote a point to a higher dimentional point where the additional dimensions are
@@ -38,8 +40,8 @@ impl<const D: usize> Point<D> {
     ///
     pub fn promote<const ND: usize>(&self) -> Point<ND> {
         let mut new_point = Point::default();
-
-        new_point.0[..self.0.len()].clone_from_slice(&self.0);
+        let len = new_point.0[0].len();
+        new_point.0[0][..len].clone_from_slice(&self.0[0]);
         new_point
     }
 
@@ -47,8 +49,8 @@ impl<const D: usize> Point<D> {
     ///
     pub fn demote<const ND: usize>(&self) -> Point<ND> {
         let mut new_point = Point::default();
-        let len = new_point.0.len();
-        new_point.0.clone_from_slice(&self.0[..len]);
+        let len = new_point.0[0].len();
+        new_point.0[0].clone_from_slice(&self.0[0][..len]);
         new_point
     }
 }
@@ -78,7 +80,13 @@ impl<const D: usize> Point<D> {
 
     /// Return an iterator over a mutable slice, containing a point's coordinates.
     ///
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
+    pub fn iter(&mut self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; D]>> {
+        self.0.iter()
+    }
+
+    /// Return an iterator over a mutable slice, containing a point's coordinates.
+    ///
+    pub fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; D]>> {
         self.0.iter_mut()
     }
 
@@ -86,11 +94,12 @@ impl<const D: usize> Point<D> {
     ///
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
+    /// 
     fn map<F>(&self, f: F) -> Point<D>
     where
-        F: FnMut(f64) -> f64,
+        F: Fn(f64) -> f64,
     {
-        Point::new(self.0.map(f))
+        Point(self.0.map(f))
     }
 
     /// Apply the closure f to each of a point's coordinates.
@@ -100,9 +109,9 @@ impl<const D: usize> Point<D> {
     /// 
     fn for_each_coord<F>(&mut self, f: F)
     where
-        F: FnMut(&mut f64),
+        F: Fn(&mut f64),
     {
-        self.iter_mut().for_each(f);
+        self.0.for_each(f);
     }
 }
 
@@ -112,10 +121,22 @@ impl<const D: usize> Point<D> {
 
 impl<'a, const D: usize> IntoIterator for &'a Point<D> {
     type Item = f64;
-    type IntoIter = std::array::IntoIter<Self::Item, D>;
+    type IntoIter = std::iter::Flatten<std::array::IntoIter<[f64; D], 1>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<const D: usize> AsRef<Matrix<1, D>> for Point<D> {
+    fn as_ref(&self) -> &Matrix<1, D> {
+        &self.0
+    }
+}
+
+impl<const D: usize> From<Matrix<1, D>> for Point<D> {
+    fn from(matrix: Matrix<1, D>) -> Self {
+        Point(matrix)
     }
 }
 
@@ -128,11 +149,11 @@ impl<const D: usize> Index<Dim> for Point<D> {
 
     fn index(&self, index: Dim) -> &Self::Output {
         match index {
-            Dim::X if D >= 1 => &self.0[0],
-            Dim::Y if D >= 2 => &self.0[1],
-            Dim::Z if D >= 3 => &self.0[2],
-            Dim::W if D >= 4 => &self.0[3],
-            Dim::N(n) if D >= n => &self.0[n],
+            Dim::X if D >= 1 => &self.0[0][0],
+            Dim::Y if D >= 2 => &self.0[0][1],
+            Dim::Z if D >= 3 => &self.0[0][2],
+            Dim::W if D >= 4 => &self.0[0][3],
+            Dim::N(n) if D >= n => &self.0[0][n],
             _ => panic!(),
         }
     }
@@ -140,11 +161,11 @@ impl<const D: usize> Index<Dim> for Point<D> {
 impl<const D: usize> IndexMut<Dim> for Point<D> {
     fn index_mut(&mut self, index: Dim) -> &mut Self::Output {
         match index {
-            Dim::X if D >= 1 => &mut self.0[0],
-            Dim::Y if D >= 2 => &mut self.0[1],
-            Dim::Z if D >= 3 => &mut self.0[2],
-            Dim::W if D >= 4 => &mut self.0[3],
-            Dim::N(n) if D >= n => &mut self.0[n],
+            Dim::X if D >= 1 => &mut self.0[0][0],
+            Dim::Y if D >= 2 => &mut self.0[0][1],
+            Dim::Z if D >= 3 => &mut self.0[0][2],
+            Dim::W if D >= 4 => &mut self.0[0][3],
+            Dim::N(n) if D >= n => &mut self.0[0][n],
             _ => panic!(),
         }
     }
@@ -235,7 +256,7 @@ impl<const D: usize> Sub<Point<D>> for Point<D> {
     type Output = Vector<D>;
 
     fn sub(self, rhs: Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0);
+        let mut vector = Vector::new(self.0[0]);
         vector
             .iter_mut()
             .zip(rhs.into_iter())
@@ -247,7 +268,7 @@ impl<const D: usize> Sub<&Point<D>> for Point<D> {
     type Output = Vector<D>;
 
     fn sub(self, rhs: &Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0);
+        let mut vector = Vector::new(self.0[0]);
         vector
             .iter_mut()
             .zip(rhs.into_iter())
@@ -259,7 +280,7 @@ impl<const D: usize> Sub<Point<D>> for &Point<D> {
     type Output = Vector<D>;
 
     fn sub(self, rhs: Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0);
+        let mut vector = Vector::new(self.0[0]);
         vector
             .iter_mut()
             .zip(rhs.into_iter())
@@ -271,7 +292,7 @@ impl<const D: usize> Sub<&Point<D>> for &Point<D> {
     type Output = Vector<D>;
 
     fn sub(self, rhs: &Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0);
+        let mut vector = Vector::new(self.0[0]);
         vector
             .iter_mut()
             .zip(rhs.into_iter())

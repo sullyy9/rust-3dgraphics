@@ -19,7 +19,7 @@ impl Mul<Matrix4X4> for Vertex {
     type Output = Vertex;
 
     fn mul(self, matrix: Matrix4X4) -> Self::Output {
-        Self([
+        Self::new([
             self[Dim::X] * matrix.0[0][0]
                 + self[Dim::Y] * matrix.0[1][0]
                 + self[Dim::Z] * matrix.0[2][0]
