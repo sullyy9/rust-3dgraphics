@@ -3,7 +3,7 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
-use super::{dimension::Dim, point::Point, matrix::Matrix};
+use super::{dimension::Dim, matrix::Matrix, point::Point};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -71,13 +71,18 @@ impl<const D: usize> Vector<D> {
         // Calculate the cross product of the 2 given vectors to get a vector perpendicular to
         // both.
         let mut normal_vector: Vector<D> = Vector::default();
-        normal_vector.0[0][0] = (vector1.0[0][1] * vector2.0[0][2]) - (vector1.0[0][2] * vector2.0[0][1]);
-        normal_vector.0[0][1] = (vector1.0[0][2] * vector2.0[0][0]) - (vector1.0[0][0] * vector2.0[0][2]);
-        normal_vector.0[0][2] = (vector1.0[0][0] * vector2.0[0][1]) - (vector1.0[0][1] * vector2.0[0][0]);
+        normal_vector.0[0][0] =
+            (vector1.0[0][1] * vector2.0[0][2]) - (vector1.0[0][2] * vector2.0[0][1]);
+        normal_vector.0[0][1] =
+            (vector1.0[0][2] * vector2.0[0][0]) - (vector1.0[0][0] * vector2.0[0][2]);
+        normal_vector.0[0][2] =
+            (vector1.0[0][0] * vector2.0[0][1]) - (vector1.0[0][1] * vector2.0[0][0]);
 
         // Normalise the vector (It's magnitude should be 1).
         normal_vector /= f64::sqrt(
-            normal_vector.0[0][0].powi(2) + normal_vector.0[0][1].powi(2) + normal_vector.0[0][2].powi(2),
+            normal_vector.0[0][0].powi(2)
+                + normal_vector.0[0][1].powi(2)
+                + normal_vector.0[0][2].powi(2),
         );
         normal_vector
     }
@@ -111,6 +116,7 @@ impl<const D: usize> Vector<D> {
 
     /// Apply the closure f to each of a vector's coordinates.
     ///
+    #[allow(dead_code)]
     fn for_each_coord<F>(&mut self, f: F)
     where
         F: FnMut(&mut f64),
@@ -165,26 +171,51 @@ impl<const D: usize> IndexMut<Dim> for Vector<D> {
 
 /// Vector + Vector = Vector
 ///
+impl<const D: usize> Add<Vector<D>> for Vector<D> {
+    type Output = Vector<D>;
+    fn add(self, rhs: Vector<D>) -> Self::Output {
+        Vector(self.0.add(rhs.0))
+    }
+}
 impl<const D: usize> Add<&Vector<D>> for Vector<D> {
-    type Output = Self;
-
+    type Output = Vector<D>;
     fn add(self, rhs: &Vector<D>) -> Self::Output {
-        let mut point = self;
-        point
-            .iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
-        point
+        Vector(self.0.add(rhs.0))
+    }
+}
+impl<const D: usize> Add<Vector<D>> for &Vector<D> {
+    type Output = Vector<D>;
+    fn add(self, rhs: Vector<D>) -> Self::Output {
+        Vector(self.0.add(rhs.0))
+    }
+}
+impl<const D: usize> Add<&Vector<D>> for &Vector<D> {
+    type Output = Vector<D>;
+    fn add(self, rhs: &Vector<D>) -> Self::Output {
+        Vector(self.0.add(rhs.0))
     }
 }
 
 /// Vector += Vector
 ///
-impl<const D: usize> AddAssign for Vector<D> {
-    fn add_assign(&mut self, rhs: Self) {
-        self.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(new_comp, rhs_comp)| *new_comp += rhs_comp);
+impl<const D: usize> AddAssign<Vector<D>> for Vector<D> {
+    fn add_assign(&mut self, rhs: Vector<D>) {
+        self.0.add_assign(rhs.0);
+    }
+}
+impl<const D: usize> AddAssign<&mut Vector<D>> for Vector<D> {
+    fn add_assign(&mut self, rhs: &mut Vector<D>) {
+        self.0.add_assign(rhs.0);
+    }
+}
+impl<const D: usize> AddAssign<Vector<D>> for &mut Vector<D> {
+    fn add_assign(&mut self, rhs: Vector<D>) {
+        self.0.add_assign(rhs.0);
+    }
+}
+impl<const D: usize> AddAssign<&mut Vector<D>> for &mut Vector<D> {
+    fn add_assign(&mut self, rhs: &mut Vector<D>) {
+        self.0.add_assign(rhs.0);
     }
 }
 
@@ -195,15 +226,13 @@ impl<const D: usize> AddAssign for Vector<D> {
 impl<T: Into<f64>, const D: usize> Mul<T> for Vector<D> {
     type Output = Vector<D>;
     fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.mul(rhs))
+        Vector(self.0.mul(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Mul<T> for &Vector<D> {
     type Output = Vector<D>;
     fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.mul(rhs))
+        Vector(self.0.mul(rhs))
     }
 }
 
@@ -211,14 +240,12 @@ impl<T: Into<f64>, const D: usize> Mul<T> for &Vector<D> {
 ///
 impl<T: Into<f64>, const D: usize> MulAssign<T> for Vector<D> {
     fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.mul_assign(rhs));
+        self.0.mul_assign(rhs);
     }
 }
 impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Vector<D> {
     fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.mul_assign(rhs));
+        self.0.mul_assign(rhs);
     }
 }
 
@@ -227,15 +254,13 @@ impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Vector<D> {
 impl<T: Into<f64>, const D: usize> Div<T> for Vector<D> {
     type Output = Vector<D>;
     fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.div(rhs))
+        Vector(self.0.div(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Div<T> for &Vector<D> {
     type Output = Vector<D>;
     fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.div(rhs))
+        Vector(self.0.div(rhs))
     }
 }
 
@@ -243,14 +268,12 @@ impl<T: Into<f64>, const D: usize> Div<T> for &Vector<D> {
 ///
 impl<T: Into<f64>, const D: usize> DivAssign<T> for Vector<D> {
     fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.div_assign(rhs));
+        self.0.div_assign(rhs);
     }
 }
 impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Vector<D> {
     fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.div_assign(rhs));
+        self.0.div_assign(rhs);
     }
 }
 
@@ -258,7 +281,12 @@ impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Vector<D> {
 ///
 impl<const D: usize> Neg for Vector<D> {
     type Output = Vector<D>;
-
+    fn neg(self) -> Self::Output {
+        self.map(|coord| coord.neg())
+    }
+}
+impl<const D: usize> Neg for &Vector<D> {
+    type Output = Vector<D>;
     fn neg(self) -> Self::Output {
         self.map(|coord| coord.neg())
     }

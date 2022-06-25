@@ -1,8 +1,8 @@
 //! Implementation of Point types.
 //!
 
-use super::{dimension::Dim, vector::Vector, matrix::Matrix};
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
+use super::{dimension::Dim, matrix::Matrix, vector::Vector};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Types & Traits //////////////////////////////////////////////////////////////
@@ -94,7 +94,8 @@ impl<const D: usize> Point<D> {
     ///
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
-    /// 
+    ///
+    #[allow(dead_code)]
     fn map<F>(&self, f: F) -> Point<D>
     where
         F: Fn(f64) -> f64,
@@ -106,7 +107,7 @@ impl<const D: usize> Point<D> {
     ///
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
-    /// 
+    #[allow(dead_code)]
     fn for_each_coord<F>(&mut self, f: F)
     where
         F: Fn(&mut f64),
@@ -175,47 +176,26 @@ impl<const D: usize> IndexMut<Dim> for Point<D> {
 ///
 impl<const D: usize> Add<Vector<D>> for Point<D> {
     type Output = Point<D>;
-
     fn add(self, rhs: Vector<D>) -> Self::Output {
-        let mut pt = self;
-
-        pt.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
-        pt
+        Point(self.0.add(&rhs.0))
     }
 }
 impl<const D: usize> Add<&Vector<D>> for Point<D> {
     type Output = Point<D>;
-
     fn add(self, rhs: &Vector<D>) -> Self::Output {
-        let mut pt = self;
-        pt.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
-        pt
+        Point(self.0.add(&rhs.0))
     }
 }
 impl<const D: usize> Add<Vector<D>> for &Point<D> {
     type Output = Point<D>;
-
     fn add(self, rhs: Vector<D>) -> Self::Output {
-        let mut pt = *self;
-        pt.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
-        pt
+        Point(self.0.add(&rhs.0))
     }
 }
 impl<const D: usize> Add<&Vector<D>> for &Point<D> {
     type Output = Point<D>;
-
     fn add(self, rhs: &Vector<D>) -> Self::Output {
-        let mut pt = *self;
-        pt.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
-        pt
+        Point(self.0.add(&rhs.0))
     }
 }
 
@@ -223,30 +203,22 @@ impl<const D: usize> Add<&Vector<D>> for &Point<D> {
 ///
 impl<const D: usize> AddAssign<Vector<D>> for Point<D> {
     fn add_assign(&mut self, rhs: Vector<D>) {
-        self.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
+        self.0.add_assign(&rhs.0);
     }
 }
 impl<const D: usize> AddAssign<&Vector<D>> for Point<D> {
     fn add_assign(&mut self, rhs: &Vector<D>) {
-        self.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
+        self.0.add_assign(&rhs.0);
     }
 }
 impl<const D: usize> AddAssign<Vector<D>> for &mut Point<D> {
     fn add_assign(&mut self, rhs: Vector<D>) {
-        self.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
+        self.0.add_assign(&rhs.0);
     }
 }
 impl<const D: usize> AddAssign<&Vector<D>> for &mut Point<D> {
     fn add_assign(&mut self, rhs: &Vector<D>) {
-        self.iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.add_assign(rhs));
+        self.0.add_assign(&rhs.0);
     }
 }
 
@@ -254,50 +226,26 @@ impl<const D: usize> AddAssign<&Vector<D>> for &mut Point<D> {
 ///
 impl<const D: usize> Sub<Point<D>> for Point<D> {
     type Output = Vector<D>;
-
     fn sub(self, rhs: Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0[0]);
-        vector
-            .iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
-        vector
+        Vector(self.0.sub(&rhs.0))
     }
 }
 impl<const D: usize> Sub<&Point<D>> for Point<D> {
     type Output = Vector<D>;
-
     fn sub(self, rhs: &Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0[0]);
-        vector
-            .iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
-        vector
+        Vector(self.0.sub(&rhs.0))
     }
 }
 impl<const D: usize> Sub<Point<D>> for &Point<D> {
     type Output = Vector<D>;
-
     fn sub(self, rhs: Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0[0]);
-        vector
-            .iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
-        vector
+        Vector(self.0.sub(&rhs.0))
     }
 }
 impl<const D: usize> Sub<&Point<D>> for &Point<D> {
     type Output = Vector<D>;
-
     fn sub(self, rhs: &Point<D>) -> Self::Output {
-        let mut vector = Vector::new(self.0[0]);
-        vector
-            .iter_mut()
-            .zip(rhs.into_iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
-        vector
+        Vector(self.0.sub(&rhs.0))
     }
 }
 
@@ -308,15 +256,13 @@ impl<const D: usize> Sub<&Point<D>> for &Point<D> {
 impl<T: Into<f64>, const D: usize> Mul<T> for Point<D> {
     type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.mul(rhs))
+        Point(self.0.mul(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Mul<T> for &Point<D> {
     type Output = Point<D>;
     fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.mul(rhs))
+        Point(self.0.mul(rhs))
     }
 }
 
@@ -324,14 +270,12 @@ impl<T: Into<f64>, const D: usize> Mul<T> for &Point<D> {
 ///
 impl<T: Into<f64>, const D: usize> MulAssign<T> for Point<D> {
     fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.mul_assign(rhs));
+        self.0.mul_assign(rhs);
     }
 }
 impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Point<D> {
     fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.mul_assign(rhs));
+        self.0.mul_assign(rhs);
     }
 }
 
@@ -340,15 +284,13 @@ impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Point<D> {
 impl<T: Into<f64>, const D: usize> Div<T> for Point<D> {
     type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.div(rhs))
+        Point(self.0.div(rhs))
     }
 }
 impl<T: Into<f64>, const D: usize> Div<T> for &Point<D> {
     type Output = Point<D>;
     fn div(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|coord| coord.div(rhs))
+        Point(self.0.div(rhs))
     }
 }
 
@@ -356,14 +298,12 @@ impl<T: Into<f64>, const D: usize> Div<T> for &Point<D> {
 ///
 impl<T: Into<f64>, const D: usize> DivAssign<T> for Point<D> {
     fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.div_assign(rhs));
+        self.0.div_assign(rhs);
     }
 }
 impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Point<D> {
     fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each_coord(|coord| coord.div_assign(rhs));
+        self.0.div_assign(rhs);
     }
 }
 
