@@ -37,5 +37,3 @@ add_impl! {{&Matrix<R, C>} + {&Matrix<R, C>}}
 
 add_impl! {{Matrix<R, C>} += {Matrix<R, C>}}
 add_impl! {{Matrix<R, C>} += {&Matrix<R, C>}}
-add_impl! {{&mut Matrix<R, C>} += {Matrix<R, C>}}
-add_impl! {{&mut Matrix<R, C>} += {&Matrix<R, C>}}

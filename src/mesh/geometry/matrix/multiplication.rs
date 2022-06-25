@@ -23,13 +23,8 @@ impl<T: Into<f64>, const R: usize, const C: usize> Mul<T> for &Matrix<R, C> {
         self.map(|lhs| lhs.mul(rhs))
     }
 }
+
 impl<T: Into<f64>, const R: usize, const C: usize> MulAssign<T> for Matrix<R, C> {
-    fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each(|lhs| lhs.mul_assign(rhs));
-    }
-}
-impl<T: Into<f64>, const R: usize, const C: usize> MulAssign<T> for &mut Matrix<R, C> {
     fn mul_assign(&mut self, rhs: T) {
         let rhs = rhs.into();
         self.for_each(|lhs| lhs.mul_assign(rhs));
@@ -59,5 +54,6 @@ macro_rules! mul_impl {
 
 mul_impl! {{Matrix<M, N>} * {Matrix<N, P>}}
 mul_impl! {{Matrix<M, N>} * {&Matrix<N, P>}}
+
 mul_impl! {{&Matrix<M, N>} * {Matrix<N, P>}}
 mul_impl! {{&Matrix<M, N>} * {&Matrix<N, P>}}

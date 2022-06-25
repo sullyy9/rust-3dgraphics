@@ -29,9 +29,3 @@ impl<T: Into<f64>, const R: usize, const C: usize> DivAssign<T> for Matrix<R, C>
         self.for_each(|lhs| lhs.div_assign(rhs));
     }
 }
-impl<T: Into<f64>, const R: usize, const C: usize> DivAssign<T> for &mut Matrix<R, C> {
-    fn div_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each(|lhs| lhs.div_assign(rhs));
-    }
-}
