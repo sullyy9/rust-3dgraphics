@@ -40,7 +40,7 @@ impl<const D: usize> Point<D> {
     ///
     pub fn promote<const ND: usize>(&self) -> Point<ND> {
         let mut new_point = Point::default();
-        let len = new_point.0[0].len();
+        let len = self.0[0].len();
         new_point.0[0][..len].clone_from_slice(&self.0[0]);
         new_point
     }
