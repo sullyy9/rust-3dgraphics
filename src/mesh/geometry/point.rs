@@ -307,6 +307,33 @@ impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Point<D> {
     }
 }
 
+/// Point * Matrix.
+///
+impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for Point<R> {
+    type Output = Point<C>;
+    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+        Point(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for &Point<R> {
+    type Output = Point<C>;
+    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+        Point(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for Point<R> {
+    type Output = Point<C>;
+    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+        Point(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for &Point<R> {
+    type Output = Point<C>;
+    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+        Point(self.0.mul(rhs))
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Tests ///////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
