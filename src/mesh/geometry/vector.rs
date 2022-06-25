@@ -3,7 +3,7 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
-use super::{dimension::Dim, point::Point};
+use super::{dimension::Dim, point::Point, matrix::Matrix};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -12,7 +12,7 @@ use super::{dimension::Dim, point::Point};
 /// Type representing a N dimensional vector.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Vector<const D: usize>(pub [f64; D]);
+pub struct Vector<const D: usize>(pub Matrix<1, D>);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -20,7 +20,7 @@ pub struct Vector<const D: usize>(pub [f64; D]);
 
 impl<const D: usize> Default for Vector<D> {
     fn default() -> Self {
-        Self([0.0; D])
+        Self(Matrix::new([[0.0; D]]))
     }
 }
 
@@ -31,7 +31,7 @@ impl<const D: usize> Vector<D> {
     where
         T: Into<f64>,
     {
-        Self(components.map(|comp| comp.into()))
+        Self(Matrix::new([components.map(|comp| comp.into())]))
     }
 
     /// Return a new Vector giving the magnitude and direction of one point to another.
@@ -45,8 +45,8 @@ impl<const D: usize> Vector<D> {
     ///
     pub fn promote<const ND: usize>(&self) -> Vector<ND> {
         let mut new_vector = Vector::default();
-
-        new_vector.0[..self.0.len()].clone_from_slice(&self.0);
+        let len = self.0[0].len();
+        new_vector.0[0][..len].clone_from_slice(&self.0[0]);
         new_vector
     }
 
@@ -54,8 +54,8 @@ impl<const D: usize> Vector<D> {
     ///
     pub fn demote<const ND: usize>(&self) -> Vector<ND> {
         let mut new_vector = Vector::default();
-        let len = new_vector.0.len();
-        new_vector.0.clone_from_slice(&self.0[..len]);
+        let len = new_vector.0[0].len();
+        new_vector.0[0].clone_from_slice(&self.0[0][..len]);
         new_vector
     }
 }
@@ -71,13 +71,13 @@ impl<const D: usize> Vector<D> {
         // Calculate the cross product of the 2 given vectors to get a vector perpendicular to
         // both.
         let mut normal_vector: Vector<D> = Vector::default();
-        normal_vector.0[0] = (vector1.0[1] * vector2.0[2]) - (vector1.0[2] * vector2.0[1]);
-        normal_vector.0[1] = (vector1.0[2] * vector2.0[0]) - (vector1.0[0] * vector2.0[2]);
-        normal_vector.0[2] = (vector1.0[0] * vector2.0[1]) - (vector1.0[1] * vector2.0[0]);
+        normal_vector.0[0][0] = (vector1.0[0][1] * vector2.0[0][2]) - (vector1.0[0][2] * vector2.0[0][1]);
+        normal_vector.0[0][1] = (vector1.0[0][2] * vector2.0[0][0]) - (vector1.0[0][0] * vector2.0[0][2]);
+        normal_vector.0[0][2] = (vector1.0[0][0] * vector2.0[0][1]) - (vector1.0[0][1] * vector2.0[0][0]);
 
         // Normalise the vector (It's magnitude should be 1).
         normal_vector /= f64::sqrt(
-            normal_vector.0[0].powi(2) + normal_vector.0[1].powi(2) + normal_vector.0[2].powi(2),
+            normal_vector.0[0][0].powi(2) + normal_vector.0[0][1].powi(2) + normal_vector.0[0][2].powi(2),
         );
         normal_vector
     }
@@ -88,9 +88,15 @@ impl<const D: usize> Vector<D> {
         f64::sqrt(self.into_iter().fold(0.0, |sum, coord| sum + coord.powi(2)))
     }
 
+    /// Return an iterator over a mutable slice, containing a vector's components.
+    ///
+    pub fn iter(&mut self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; D]>> {
+        self.0.iter()
+    }
+
     /// Returns an iterator over a vector's coordinates that allows modifying each value.
     ///
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, f64> {
+    pub fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; D]>> {
         self.0.iter_mut()
     }
 
@@ -98,9 +104,9 @@ impl<const D: usize> Vector<D> {
     ///
     fn map<F>(&self, f: F) -> Vector<D>
     where
-        F: FnMut(f64) -> f64,
+        F: Fn(f64) -> f64,
     {
-        Vector::new(self.0.map(f))
+        Vector(self.0.map(f))
     }
 
     /// Apply the closure f to each of a vector's coordinates.
@@ -119,7 +125,7 @@ impl<const D: usize> Vector<D> {
 
 impl<'a, const D: usize> IntoIterator for &'a Vector<D> {
     type Item = f64;
-    type IntoIter = std::array::IntoIter<Self::Item, D>;
+    type IntoIter = std::iter::Flatten<std::array::IntoIter<[f64; D], 1>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -135,11 +141,11 @@ impl<const D: usize> Index<Dim> for Vector<D> {
 
     fn index(&self, index: Dim) -> &Self::Output {
         match index {
-            Dim::X if D >= 1 => &self.0[0],
-            Dim::Y if D >= 2 => &self.0[1],
-            Dim::Z if D >= 3 => &self.0[2],
-            Dim::W if D >= 4 => &self.0[3],
-            Dim::N(n) if D >= n => &self.0[n],
+            Dim::X if D >= 1 => &self.0[0][0],
+            Dim::Y if D >= 2 => &self.0[0][1],
+            Dim::Z if D >= 3 => &self.0[0][2],
+            Dim::W if D >= 4 => &self.0[0][3],
+            Dim::N(n) if D >= n => &self.0[0][n],
             _ => panic!(),
         }
     }
@@ -147,11 +153,11 @@ impl<const D: usize> Index<Dim> for Vector<D> {
 impl<const D: usize> IndexMut<Dim> for Vector<D> {
     fn index_mut(&mut self, index: Dim) -> &mut Self::Output {
         match index {
-            Dim::X if D >= 1 => &mut self.0[0],
-            Dim::Y if D >= 2 => &mut self.0[1],
-            Dim::Z if D >= 3 => &mut self.0[2],
-            Dim::W if D >= 4 => &mut self.0[3],
-            Dim::N(n) if D >= n => &mut self.0[n],
+            Dim::X if D >= 1 => &mut self.0[0][0],
+            Dim::Y if D >= 2 => &mut self.0[0][1],
+            Dim::Z if D >= 3 => &mut self.0[0][2],
+            Dim::W if D >= 4 => &mut self.0[0][3],
+            Dim::N(n) if D >= n => &mut self.0[0][n],
             _ => panic!(),
         }
     }
