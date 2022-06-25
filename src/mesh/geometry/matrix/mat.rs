@@ -7,7 +7,7 @@ use std::ops::{Index, IndexMut};
 /// Type representing an N dimensional Matrix.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Matrix<const R: usize, const C: usize>(pub(super) [[f64; C]; R]);
+pub struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -22,10 +22,10 @@ impl<const R: usize, const C: usize> Default for Matrix<R, C> {
 }
 
 impl<const R: usize, const C: usize> Matrix<R, C> {
-
     pub fn new<T>(data: [[T; C]; R]) -> Self
     where
-        T: Into<f64>, {
+        T: Into<f64>,
+    {
         Self(data.map(|row| row.map(|i| i.into())))
     }
 }
@@ -40,11 +40,11 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
     ///
-    pub(super) fn map<F>(&self, f: F) -> Matrix<R, C>
+    pub fn map<F>(&self, f: F) -> Matrix<R, C>
     where
         F: Fn(f64) -> f64,
     {
-        Matrix::new(self.0.map(|row| row.map(&f)))
+        Matrix(self.0.map(|row| row.map(&f)))
     }
 
     /// Apply the closure f to each of a point's coordinates.
@@ -52,24 +52,22 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
     ///
-    pub(super) fn for_each<F>(&mut self, f: F)
+    pub fn for_each<F>(&mut self, f: F)
     where
         F: Fn(&mut f64),
     {
-        self.0
-            .iter_mut()
-            .for_each(|row| row.iter_mut().for_each(&f));
+        self.iter_mut().for_each(&f);
     }
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub(super) fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; C]>> {
+    pub fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; C]>> {
         self.0.iter().flatten()
     }
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub(super) fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; C]>> {
+    pub fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; C]>> {
         self.0.iter_mut().flatten()
     }
 }
@@ -77,6 +75,26 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
 ////////////////////////////////////////////////////////////////////////////////
 // Trait Implementations ///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+
+impl<const R: usize, const C: usize> IntoIterator for Matrix<R, C> {
+    type Item = f64;
+    type IntoIter = std::iter::Flatten<std::array::IntoIter<[f64; C], R>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter().flatten()
+    }
+}
+
+impl<const R: usize, const C: usize> AsRef<Matrix<R, C>> for Matrix<R, C> {
+    fn as_ref(&self) -> &Matrix<R, C> {
+        self
+    }
+}
+impl<const R: usize, const C: usize> AsMut<Matrix<R, C>> for Matrix<R, C> {
+    fn as_mut(&mut self) -> &mut Matrix<R, C> {
+        self
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Operator Overloads //////////////////////////////////////////////////////////
