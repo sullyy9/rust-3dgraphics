@@ -4,7 +4,7 @@
 mod transform;
 mod polygon;
 mod vertex;
-mod mesh;
+mod fvmesh;
 // mod static_mesh;
 // mod dynamic_mesh;
 
@@ -13,7 +13,7 @@ pub use self::{
     transform::Matrix4X4,
     polygon::{IndexPoly, Polygon, RefPoly},
     vertex::Vertex,
-    mesh::Mesh,
+    fvmesh::Mesh,
     // static_mesh::StaticMesh,
     // dynamic_mesh::DynamicMesh,
 };
