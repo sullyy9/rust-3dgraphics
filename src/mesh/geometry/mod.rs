@@ -11,6 +11,6 @@ mod point;
 mod vector;
 
 pub use self::{
-    bounding_box::BBox, dimension::Dim, orientation::Orientation3D,
+    bounding_box::BBox, dimension::Dim, matrix::Matrix, orientation::Orientation3D,
     orientation_vector::OrientationVector3D, point::Point, vector::Vector,
 };

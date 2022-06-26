@@ -1,6 +1,6 @@
 use super::{
     geometry::{Dim, Point},
-    matrix::Matrix4X4,
+    transform::Matrix4X4,
 };
 
 use std::ops::Mul;

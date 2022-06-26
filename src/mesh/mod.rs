@@ -1,7 +1,7 @@
 //! Implementation of primitive geometric data types. E.g. 3D point, 3D vector, etc.
 //!
 
-mod matrix;
+mod transform;
 mod polygon;
 mod vertex;
 mod mesh;
@@ -10,7 +10,7 @@ mod mesh;
 
 pub mod geometry;
 pub use self::{
-    matrix::Matrix4X4,
+    transform::Matrix4X4,
     polygon::{IndexPoly, Polygon, RefPoly},
     vertex::Vertex,
     mesh::Mesh,

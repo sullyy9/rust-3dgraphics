@@ -1,6 +1,6 @@
 use std::ops::MulAssign;
 
-use crate::mesh::geometry::OrientationVector3D;
+use super::geometry::{Matrix, OrientationVector3D};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -32,24 +32,24 @@ impl Default for Transformation {
 impl Matrix4X4 {
     /// Construct and return a rotation matrix
     ///
-    pub fn new_rotation(rotation: OrientationVector3D) -> Matrix4X4 {
+    pub fn new_rotation(rotation: OrientationVector3D) -> Matrix<4, 4> {
         let (sin_x, cos_x) = f64::sin_cos(rotation.x.to_radians());
         let (sin_y, cos_y) = f64::sin_cos(rotation.y.to_radians());
         let (sin_z, cos_z) = f64::sin_cos(rotation.z.to_radians());
 
-        let x_rot_matrix = Matrix4X4([
+        let x_rot_matrix = Matrix::new([
             [1.0, 0.0, 0.0, 0.0],
             [0.0, cos_x, -sin_x, 0.0],
             [0.0, sin_x, cos_x, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
-        let y_rot_matrix = Matrix4X4([
+        let y_rot_matrix = Matrix::new([
             [cos_y, 0.0, sin_y, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [-sin_y, 0.0, cos_y, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]);
-        let z_rot_matrix = Matrix4X4([
+        let z_rot_matrix = Matrix::new([
             [cos_z, -sin_z, 0.0, 0.0],
             [sin_z, cos_z, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
@@ -61,7 +61,7 @@ impl Matrix4X4 {
 
 impl Transformation {
     /// Add a rotation to the transformation.
-    /// 
+    ///
     pub fn add_rotation(&mut self, rotation: OrientationVector3D) {
         self.mul_assign(Transformation::x_rotation(rotation.x));
         self.mul_assign(Transformation::y_rotation(rotation.y));
@@ -69,7 +69,7 @@ impl Transformation {
     }
 
     /// Return a transformation that rotates in x.
-    /// 
+    ///
     pub fn x_rotation(rotation: f64) -> Transformation {
         let (sin, cos) = f64::sin_cos(rotation.to_radians());
         Transformation([
@@ -81,7 +81,7 @@ impl Transformation {
     }
 
     /// Return a transformation that rotates in y.
-    /// 
+    ///
     pub fn y_rotation(rotation: f64) -> Transformation {
         let (sin, cos) = f64::sin_cos(rotation.to_radians());
         Transformation([
@@ -93,7 +93,7 @@ impl Transformation {
     }
 
     /// Return a transformation that rotates in z.
-    /// 
+    ///
     pub fn z_rotation(rotation: f64) -> Transformation {
         let (sin, cos) = f64::sin_cos(rotation.to_radians());
         Transformation([
