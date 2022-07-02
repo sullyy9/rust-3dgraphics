@@ -7,7 +7,7 @@ use std::ops::{Index, IndexMut};
 /// Type representing an N dimensional Matrix.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Matrix<const R: usize, const C: usize>([[f64; C]; R]);
+pub struct Matrix<const R: usize, const C: usize>(pub(self) [[f64; C]; R]);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -22,11 +22,8 @@ impl<const R: usize, const C: usize> Default for Matrix<R, C> {
 }
 
 impl<const R: usize, const C: usize> Matrix<R, C> {
-    pub fn new<T>(data: [[T; C]; R]) -> Self
-    where
-        T: Into<f64>,
-    {
-        Self(data.map(|row| row.map(|i| i.into())))
+    pub fn new(data: [[f64; C]; R]) -> Self {
+        Self(data)
     }
 }
 
@@ -93,6 +90,15 @@ impl<const R: usize, const C: usize> AsRef<Matrix<R, C>> for Matrix<R, C> {
 impl<const R: usize, const C: usize> AsMut<Matrix<R, C>> for Matrix<R, C> {
     fn as_mut(&mut self) -> &mut Matrix<R, C> {
         self
+    }
+}
+
+impl<T, const R: usize, const C: usize> From<[[T; C]; R]> for Matrix<R, C>
+where
+    T: Into<f64>,
+{
+    fn from(array: [[T; C]; R]) -> Self {
+        Matrix(array.map(|row| row.map(|i| i.into())))
     }
 }
 
@@ -177,12 +183,12 @@ mod tests {
 
     #[test]
     fn test_mul() {
-        let mat1 = Matrix::new([[0, 1, 2], [3, 4, 5]]);
-        let mat2 = Matrix::new([[6, 7], [8, 9], [10, 11]]);
-        assert_eq!((mat1 * mat2), Matrix::new([[28, 31], [100, 112]]));
+        let mat1 = Matrix::from([[0, 1, 2], [3, 4, 5]]);
+        let mat2 = Matrix::from([[6, 7], [8, 9], [10, 11]]);
+        assert_eq!((mat1 * mat2), Matrix::from([[28, 31], [100, 112]]));
 
-        let mut mat3 = Matrix::new([[2, 3], [5, 4]]);
+        let mut mat3 = Matrix::from([[2, 3], [5, 4]]);
         mat3 *= mat3;
-        assert_eq!(mat3, Matrix::new([[19, 18], [30, 31]]));
+        assert_eq!(mat3, Matrix::from([[19, 18], [30, 31]]));
     }
 }
