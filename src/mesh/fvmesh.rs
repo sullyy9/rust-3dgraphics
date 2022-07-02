@@ -9,6 +9,7 @@ use super::{
         Dim::{W, X, Y, Z},
         Point, Scalar, Vector,
     },
+    transform::Transform,
     {IndexPoly, Matrix4X4, RefPoly, Vertex},
 };
 
@@ -107,19 +108,19 @@ impl Mesh {
         processed_mesh
     }
 
-    /// Apply position and rotation transformations.
+    /// Apply spacial transformations.
     ///
     pub fn apply_transformations(&mut self) {
-        // Find the rotation matrix
-        let rotation_matrix = Matrix4X4::new_rotation(self.physics.orientation.vector());
+        let transformation = Transform::builder()
+            .add_x_rotation(self.physics.orientation.vector().x)
+            .add_y_rotation(self.physics.orientation.vector().y)
+            .add_z_rotation(self.physics.orientation.vector().z)
+            .add_translation(self.physics.position.vector_from(&Point::new([0, 0, 0])))
+            .build();
 
-        let position_vector = self.physics.position.vector_from(&Point::new([0, 0, 0]));
-
-        // Apply rotation then position to each vertex.
-        for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex * rotation_matrix;
-            vertex.translate(&position_vector.promote());
-        }
+        self.verticies
+            .iter_mut()
+            .for_each(|mut vertex| vertex *= transformation);
     }
 
     /// Find the normal unit vectors of each polygon in the mesh.

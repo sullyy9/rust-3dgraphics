@@ -1,6 +1,6 @@
-use std::ops::MulAssign;
+use std::ops::Mul;
 
-use super::geometry::{Matrix, OrientationVector3D};
+use super::geometry::{Dim, Matrix, OrientationVector3D, Scalar, Vector};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -10,24 +10,104 @@ use super::geometry::{Matrix, OrientationVector3D};
 ///
 #[derive(Copy, Clone)]
 pub struct Matrix4X4(pub [[f64; 4]; 4]);
-pub struct Transformation([[f64; 4]; 4]);
+
+#[derive(Clone, Copy)]
+pub struct Transform(pub(self) Matrix<4, 4>);
+pub struct TransformBuilder(pub(self) Matrix<4, 4>);
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Implementations ////////////////////////////////////////////////////////////
+// Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl Default for Transformation {
+impl Default for Transform {
     /// Return an identity matrix transformation.
     ///
     fn default() -> Self {
-        Self([
+        Self(Matrix::new([
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
-        ])
+        ]))
     }
 }
+
+impl Default for TransformBuilder {
+    /// Return an identity matrix transformation.
+    ///
+    fn default() -> Self {
+        Self(Matrix::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]))
+    }
+}
+
+impl Transform {
+    /// Create a new TransformBuilder which holds an identity transformation.
+    ///
+    #[allow(dead_code)]
+    pub fn builder() -> TransformBuilder {
+        TransformBuilder::default()
+    }
+}
+
+impl TransformBuilder {
+    /// Create a new TransformBuilder which holds an identity transformation.
+    ///
+    #[allow(dead_code)]
+    pub fn new() -> TransformBuilder {
+        TransformBuilder::default()
+    }
+
+    #[allow(dead_code)]
+    pub fn build(&self) -> Transform {
+        Transform(self.0)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Trait Implementations ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+impl<T> From<[[T; 4]; 4]> for Transform
+where
+    T: Into<f64>,
+{
+    fn from(array: [[T; 4]; 4]) -> Self {
+        Self(Matrix::from(array))
+    }
+}
+
+impl AsRef<Matrix<4, 4>> for Transform {
+    fn as_ref(&self) -> &Matrix<4, 4> {
+        &self.0
+    }
+}
+
+impl AsRef<Matrix<4, 4>> for TransformBuilder {
+    fn as_ref(&self) -> &Matrix<4, 4> {
+        &self.0
+    }
+}
+
+impl AsMut<Matrix<4, 4>> for Transform {
+    fn as_mut(&mut self) -> &mut Matrix<4, 4> {
+        &mut self.0
+    }
+}
+
+impl AsMut<Matrix<4, 4>> for TransformBuilder {
+    fn as_mut(&mut self) -> &mut Matrix<4, 4> {
+        &mut self.0
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Implementations ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 impl Matrix4X4 {
     /// Construct and return a rotation matrix
@@ -59,55 +139,86 @@ impl Matrix4X4 {
     }
 }
 
-impl Transformation {
-    /// Add a rotation to the transformation.
+impl TransformBuilder {
+    /// Add a rotation about the x axis to the transformation.
     ///
-    pub fn add_rotation(&mut self, rotation: OrientationVector3D) {
-        self.mul_assign(Transformation::x_rotation(rotation.x));
-        self.mul_assign(Transformation::y_rotation(rotation.y));
-        self.mul_assign(Transformation::z_rotation(rotation.z));
+    pub fn add_x_rotation(&self, rotation: f64) -> TransformBuilder {
+        let (sin, cos) = f64::sin_cos(rotation.to_radians());
+        TransformBuilder(
+            self.0
+                * Matrix::from([
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, cos, -sin, 0.0],
+                    [0.0, sin, cos, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]),
+        )
     }
 
-    /// Return a transformation that rotates in x.
+    /// Add a rotation about the y axis to the transformation.
     ///
-    pub fn x_rotation(rotation: f64) -> Transformation {
+    pub fn add_y_rotation(&self, rotation: f64) -> TransformBuilder {
         let (sin, cos) = f64::sin_cos(rotation.to_radians());
-        Transformation([
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, cos, -sin, 0.0],
-            [0.0, sin, cos, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ])
+        TransformBuilder(
+            self.0
+                * Matrix::from([
+                    [cos, 0.0, sin, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [-sin, 0.0, cos, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]),
+        )
     }
 
-    /// Return a transformation that rotates in y.
+    /// Add a rotation about the Z axis to the transformation.
     ///
-    pub fn y_rotation(rotation: f64) -> Transformation {
+    pub fn add_z_rotation(&self, rotation: f64) -> TransformBuilder {
         let (sin, cos) = f64::sin_cos(rotation.to_radians());
-        Transformation([
-            [cos, 0.0, sin, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [-sin, 0.0, cos, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ])
+        TransformBuilder(
+            self.0
+                * Matrix::from([
+                    [cos, -sin, 0.0, 0.0],
+                    [sin, cos, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]),
+        )
     }
 
-    /// Return a transformation that rotates in z.
+    /// Add a 3D translation to the transformation.
     ///
-    pub fn z_rotation(rotation: f64) -> Transformation {
-        let (sin, cos) = f64::sin_cos(rotation.to_radians());
-        Transformation([
-            [cos, -sin, 0.0, 0.0],
-            [sin, cos, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ])
+    pub fn add_translation(&self, vector: Vector<3>) -> TransformBuilder {
+        let (t_x, t_y, t_z) = (vector[Dim::X], vector[Dim::Y], vector[Dim::Z]);
+        TransformBuilder(
+            self.0
+                * Matrix::from([
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [t_x, t_y, t_z, 1.0],
+                ]),
+        )
+    }
+
+    /// Add scaling to the transformation.
+    ///
+    #[allow(dead_code)]
+    pub fn add_scaling(&self, s: Scalar) -> TransformBuilder {
+        TransformBuilder(
+            self.0
+                * Matrix::from([
+                    [s.0, 0.0, 0.0, 0.0],
+                    [0.0, s.0, 0.0, 0.0],
+                    [0.0, 0.0, s.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]),
+        )
     }
 }
 
 /// Operator overloads
 ///
-impl std::ops::Mul<Matrix4X4> for Matrix4X4 {
+impl Mul<Matrix4X4> for Matrix4X4 {
     type Output = Matrix4X4;
 
     fn mul(self, matrix: Matrix4X4) -> Self::Output {
@@ -185,164 +296,5 @@ impl std::ops::Mul<Matrix4X4> for Matrix4X4 {
                     + self.0[3][3] * matrix.0[3][3],
             ],
         ])
-    }
-}
-
-impl std::ops::Mul<&Transformation> for Transformation {
-    type Output = Transformation;
-
-    fn mul(self, matrix: &Transformation) -> Self::Output {
-        Transformation([
-            [
-                self.0[0][0] * matrix.0[0][0]
-                    + self.0[0][1] * matrix.0[1][0]
-                    + self.0[0][2] * matrix.0[2][0]
-                    + self.0[0][3] * matrix.0[3][0],
-                self.0[0][0] * matrix.0[0][1]
-                    + self.0[0][1] * matrix.0[1][1]
-                    + self.0[0][2] * matrix.0[2][1]
-                    + self.0[0][3] * matrix.0[3][1],
-                self.0[0][0] * matrix.0[0][2]
-                    + self.0[0][1] * matrix.0[1][2]
-                    + self.0[0][2] * matrix.0[2][2]
-                    + self.0[0][3] * matrix.0[3][2],
-                self.0[0][0] * matrix.0[0][3]
-                    + self.0[0][1] * matrix.0[1][3]
-                    + self.0[0][2] * matrix.0[2][3]
-                    + self.0[0][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[1][0] * matrix.0[0][0]
-                    + self.0[1][1] * matrix.0[1][0]
-                    + self.0[1][2] * matrix.0[2][0]
-                    + self.0[1][3] * matrix.0[3][0],
-                self.0[1][0] * matrix.0[0][1]
-                    + self.0[1][1] * matrix.0[1][1]
-                    + self.0[1][2] * matrix.0[2][1]
-                    + self.0[1][3] * matrix.0[3][1],
-                self.0[1][0] * matrix.0[0][2]
-                    + self.0[1][1] * matrix.0[1][2]
-                    + self.0[1][2] * matrix.0[2][2]
-                    + self.0[1][3] * matrix.0[3][2],
-                self.0[1][0] * matrix.0[0][3]
-                    + self.0[1][1] * matrix.0[1][3]
-                    + self.0[1][2] * matrix.0[2][3]
-                    + self.0[1][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[2][0] * matrix.0[0][0]
-                    + self.0[2][1] * matrix.0[1][0]
-                    + self.0[2][2] * matrix.0[2][0]
-                    + self.0[2][3] * matrix.0[3][0],
-                self.0[2][0] * matrix.0[0][1]
-                    + self.0[2][1] * matrix.0[1][1]
-                    + self.0[2][2] * matrix.0[2][1]
-                    + self.0[2][3] * matrix.0[3][1],
-                self.0[2][0] * matrix.0[0][2]
-                    + self.0[2][1] * matrix.0[1][2]
-                    + self.0[2][2] * matrix.0[2][2]
-                    + self.0[2][3] * matrix.0[3][2],
-                self.0[2][0] * matrix.0[0][3]
-                    + self.0[2][1] * matrix.0[1][3]
-                    + self.0[2][2] * matrix.0[2][3]
-                    + self.0[2][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[3][0] * matrix.0[0][0]
-                    + self.0[3][1] * matrix.0[1][0]
-                    + self.0[3][2] * matrix.0[2][0]
-                    + self.0[3][3] * matrix.0[3][0],
-                self.0[3][0] * matrix.0[0][1]
-                    + self.0[3][1] * matrix.0[1][1]
-                    + self.0[3][2] * matrix.0[2][1]
-                    + self.0[3][3] * matrix.0[3][1],
-                self.0[3][0] * matrix.0[0][2]
-                    + self.0[3][1] * matrix.0[1][2]
-                    + self.0[3][2] * matrix.0[2][2]
-                    + self.0[3][3] * matrix.0[3][2],
-                self.0[3][0] * matrix.0[0][3]
-                    + self.0[3][1] * matrix.0[1][3]
-                    + self.0[3][2] * matrix.0[2][3]
-                    + self.0[3][3] * matrix.0[3][3],
-            ],
-        ])
-    }
-}
-impl std::ops::MulAssign<Transformation> for Transformation {
-    fn mul_assign(&mut self, matrix: Transformation) {
-        self.0 = [
-            [
-                self.0[0][0] * matrix.0[0][0]
-                    + self.0[0][1] * matrix.0[1][0]
-                    + self.0[0][2] * matrix.0[2][0]
-                    + self.0[0][3] * matrix.0[3][0],
-                self.0[0][0] * matrix.0[0][1]
-                    + self.0[0][1] * matrix.0[1][1]
-                    + self.0[0][2] * matrix.0[2][1]
-                    + self.0[0][3] * matrix.0[3][1],
-                self.0[0][0] * matrix.0[0][2]
-                    + self.0[0][1] * matrix.0[1][2]
-                    + self.0[0][2] * matrix.0[2][2]
-                    + self.0[0][3] * matrix.0[3][2],
-                self.0[0][0] * matrix.0[0][3]
-                    + self.0[0][1] * matrix.0[1][3]
-                    + self.0[0][2] * matrix.0[2][3]
-                    + self.0[0][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[1][0] * matrix.0[0][0]
-                    + self.0[1][1] * matrix.0[1][0]
-                    + self.0[1][2] * matrix.0[2][0]
-                    + self.0[1][3] * matrix.0[3][0],
-                self.0[1][0] * matrix.0[0][1]
-                    + self.0[1][1] * matrix.0[1][1]
-                    + self.0[1][2] * matrix.0[2][1]
-                    + self.0[1][3] * matrix.0[3][1],
-                self.0[1][0] * matrix.0[0][2]
-                    + self.0[1][1] * matrix.0[1][2]
-                    + self.0[1][2] * matrix.0[2][2]
-                    + self.0[1][3] * matrix.0[3][2],
-                self.0[1][0] * matrix.0[0][3]
-                    + self.0[1][1] * matrix.0[1][3]
-                    + self.0[1][2] * matrix.0[2][3]
-                    + self.0[1][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[2][0] * matrix.0[0][0]
-                    + self.0[2][1] * matrix.0[1][0]
-                    + self.0[2][2] * matrix.0[2][0]
-                    + self.0[2][3] * matrix.0[3][0],
-                self.0[2][0] * matrix.0[0][1]
-                    + self.0[2][1] * matrix.0[1][1]
-                    + self.0[2][2] * matrix.0[2][1]
-                    + self.0[2][3] * matrix.0[3][1],
-                self.0[2][0] * matrix.0[0][2]
-                    + self.0[2][1] * matrix.0[1][2]
-                    + self.0[2][2] * matrix.0[2][2]
-                    + self.0[2][3] * matrix.0[3][2],
-                self.0[2][0] * matrix.0[0][3]
-                    + self.0[2][1] * matrix.0[1][3]
-                    + self.0[2][2] * matrix.0[2][3]
-                    + self.0[2][3] * matrix.0[3][3],
-            ],
-            [
-                self.0[3][0] * matrix.0[0][0]
-                    + self.0[3][1] * matrix.0[1][0]
-                    + self.0[3][2] * matrix.0[2][0]
-                    + self.0[3][3] * matrix.0[3][0],
-                self.0[3][0] * matrix.0[0][1]
-                    + self.0[3][1] * matrix.0[1][1]
-                    + self.0[3][2] * matrix.0[2][1]
-                    + self.0[3][3] * matrix.0[3][1],
-                self.0[3][0] * matrix.0[0][2]
-                    + self.0[3][1] * matrix.0[1][2]
-                    + self.0[3][2] * matrix.0[2][2]
-                    + self.0[3][3] * matrix.0[3][2],
-                self.0[3][0] * matrix.0[0][3]
-                    + self.0[3][1] * matrix.0[1][3]
-                    + self.0[3][2] * matrix.0[2][3]
-                    + self.0[3][3] * matrix.0[3][3],
-            ],
-        ];
     }
 }
