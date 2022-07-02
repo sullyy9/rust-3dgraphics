@@ -156,3 +156,25 @@ impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for &Point<R> {
         Point(self.0.mul(rhs))
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Point *= Matrix /////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<T, const R: usize> MulAssign<T> for Point<R>
+where
+    T: AsRef<Matrix<R, R>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        let rhs = rhs.as_ref();
+        self.0.mul_assign(rhs);
+    }
+}
+impl<T, const R: usize> MulAssign<T> for &mut Point<R>
+where
+    T: AsRef<Matrix<R, R>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        let rhs = rhs.as_ref();
+        self.0.mul_assign(rhs);
+    }
+}

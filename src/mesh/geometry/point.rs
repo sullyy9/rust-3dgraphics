@@ -9,7 +9,7 @@ mod iter;
 mod method;
 
 // Internal re-exports for types required by sub-modules
-pub(self) use super::{Dim, Matrix, Vector, Scalar};
+pub(self) use super::{Dim, Matrix, Scalar, Vector};
 
 /// Type representing an N dimensional point.
 ///
@@ -33,6 +33,17 @@ mod tests {
 
         test_point *= Scalar(2.0);
         assert_eq!(test_point, control_point);
+    }
+
+    #[test]
+    fn test_matrix_mul() {
+        let mut point = Point::new([1.0, 2.0, 3.0, -4.0]);
+        let matrix = Matrix::from([[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2]]);
+
+        assert_eq!(point * matrix, Point::new([2.0, 4.0, 6.0, -8.0]));
+
+        point *= matrix;
+        assert_eq!(point, Point::new([2.0, 4.0, 6.0, -8.0]));
     }
 
     #[test]
