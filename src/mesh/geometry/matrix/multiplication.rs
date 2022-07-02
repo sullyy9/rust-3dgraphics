@@ -83,23 +83,13 @@ where
         *self = mat;
     }
 }
-impl<const N: usize> MulAssign<Matrix<N, N>> for &mut Matrix<N, N> {
-    fn mul_assign(&mut self, rhs: Matrix<N, N>) {
+impl<T, const N: usize> MulAssign<T> for &mut Matrix<N, N>
+where
+    T: AsRef<Matrix<N, N>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
         let mut mat = Matrix::default();
-
-        for r in 0..N {
-            for c in 0..N {
-                mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
-            }
-        }
-        **self = mat;
-    }
-}
-
-impl<const N: usize> MulAssign<&mut Matrix<N, N>> for &mut Matrix<N, N> {
-    fn mul_assign(&mut self, rhs: &mut Matrix<N, N>) {
-        let mut mat = Matrix::default();
-
+        let rhs = rhs.as_ref();
         for r in 0..N {
             for c in 0..N {
                 mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
