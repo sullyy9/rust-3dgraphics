@@ -68,31 +68,31 @@ mul_impl! {{&Matrix<M, N>} * {&Matrix<N, P>}}
 ////////////////////////////////////////////////////////////////////////////////
 // Matrix *= Matrix ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const N: usize> MulAssign<T> for Matrix<N, N>
+impl<T, const R: usize, const C: usize> MulAssign<T> for Matrix<R, C>
 where
-    T: AsRef<Matrix<N, N>>,
+    T: AsRef<Matrix<C, C>>,
 {
     fn mul_assign(&mut self, rhs: T) {
         let mut mat = Matrix::default();
         let rhs = rhs.as_ref();
-        for r in 0..N {
-            for c in 0..N {
-                mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
+        for r in 0..R {
+            for c in 0..C {
+                mat[r][c] = (0..C).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
             }
         }
         *self = mat;
     }
 }
-impl<T, const N: usize> MulAssign<T> for &mut Matrix<N, N>
+impl<T, const R: usize, const C: usize> MulAssign<T> for &mut Matrix<R, C>
 where
-    T: AsRef<Matrix<N, N>>,
+    T: AsRef<Matrix<C, C>>,
 {
     fn mul_assign(&mut self, rhs: T) {
         let mut mat = Matrix::default();
         let rhs = rhs.as_ref();
-        for r in 0..N {
-            for c in 0..N {
-                mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
+        for r in 0..R {
+            for c in 0..C {
+                mat[r][c] = (0..C).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
             }
         }
         **self = mat;
