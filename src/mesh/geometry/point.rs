@@ -8,7 +8,8 @@ mod index;
 mod iter;
 mod method;
 
-pub(self) use super::{Dim, Matrix, Vector};
+// Internal re-exports for types required by sub-modules
+pub(self) use super::{Dim, Matrix, Vector, Scalar};
 
 /// Type representing an N dimensional point.
 ///
@@ -28,9 +29,9 @@ mod tests {
         let control_point = Point::new([0.44, 50.28, -88.62, -0.24]);
         let mut test_point = Point::new([0.22, 25.14, -44.31, -0.12]);
 
-        assert_eq!(test_point * 2, control_point);
+        assert_eq!(test_point * Scalar(2.0), control_point);
 
-        test_point *= 2;
+        test_point *= Scalar(2.0);
         assert_eq!(test_point, control_point);
     }
 
@@ -39,9 +40,9 @@ mod tests {
         let control_point = Point::new([0.22, 25.14, -44.31, -0.12]);
         let mut test_point = Point::new([0.44, 50.28, -88.62, -0.24]);
 
-        assert_eq!(test_point / 2, control_point);
+        assert_eq!(test_point / Scalar(2.0), control_point);
 
-        test_point /= 2;
+        test_point /= Scalar(2.0);
         assert_eq!(test_point, control_point);
     }
 

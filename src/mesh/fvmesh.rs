@@ -7,7 +7,7 @@ use super::{
     geometry::{
         BBox,
         Dim::{W, X, Y, Z},
-        Point, Vector,
+        Point, Scalar, Vector,
     },
     {IndexPoly, Matrix4X4, RefPoly, Vertex},
 };
@@ -144,7 +144,7 @@ impl Mesh {
     pub fn project_to_ndc(&mut self, projection_matrix: &Matrix4X4) {
         for vertex in self.verticies.iter_mut() {
             *vertex = *vertex * (*projection_matrix);
-            *vertex /= vertex[W];
+            *vertex /= Scalar(vertex[W]);
         }
     }
 

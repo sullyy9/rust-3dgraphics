@@ -3,36 +3,43 @@
 
 use std::ops::{Mul, MulAssign};
 
-use super::Matrix;
+use super::{Matrix, Scalar};
 
-/// Matrix * Scaler multiplication.
-///
-impl<T: Into<f64>, const R: usize, const C: usize> Mul<T> for Matrix<R, C> {
+////////////////////////////////////////////////////////////////////////////////
+// Matrix * Scalar /////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<const R: usize, const C: usize> Mul<Scalar> for Matrix<R, C> {
     type Output = Matrix<R, C>;
 
-    fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|lhs| lhs.mul(rhs))
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        self.map(|lhs| lhs.mul(rhs.0))
     }
 }
-impl<T: Into<f64>, const R: usize, const C: usize> Mul<T> for &Matrix<R, C> {
+impl<const R: usize, const C: usize> Mul<Scalar> for &Matrix<R, C> {
     type Output = Matrix<R, C>;
 
-    fn mul(self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        self.map(|lhs| lhs.mul(rhs))
+    fn mul(self, rhs: Scalar) -> Self::Output {
+        self.map(|lhs| lhs.mul(rhs.0))
     }
 }
 
-impl<T: Into<f64>, const R: usize, const C: usize> MulAssign<T> for Matrix<R, C> {
-    fn mul_assign(&mut self, rhs: T) {
-        let rhs = rhs.into();
-        self.for_each(|lhs| lhs.mul_assign(rhs));
+////////////////////////////////////////////////////////////////////////////////
+// Matrix *= Scalar ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<const R: usize, const C: usize> MulAssign<Scalar> for Matrix<R, C> {
+    fn mul_assign(&mut self, rhs: Scalar) {
+        self.for_each(|lhs| lhs.mul_assign(rhs.0));
+    }
+}
+impl<const R: usize, const C: usize> MulAssign<Scalar> for &mut Matrix<R, C> {
+    fn mul_assign(&mut self, rhs: Scalar) {
+        self.for_each(|lhs| lhs.mul_assign(rhs.0));
     }
 }
 
-/// Matrix * Matrix multiplication.
-///
+////////////////////////////////////////////////////////////////////////////////
+// Matrix * Matrix /////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 macro_rules! mul_impl {
     ({$lhs_t:ty} * {$rhs_t:ty}) => {
         impl<const N: usize, const M: usize, const P: usize> Mul<$rhs_t> for $lhs_t {
@@ -58,12 +65,16 @@ mul_impl! {{Matrix<M, N>} * {&Matrix<N, P>}}
 mul_impl! {{&Matrix<M, N>} * {Matrix<N, P>}}
 mul_impl! {{&Matrix<M, N>} * {&Matrix<N, P>}}
 
-/// Matrix *= Matrix multiplication.
-///
-impl<const N: usize> MulAssign<Matrix<N, N>> for Matrix<N, N> {
-    fn mul_assign(&mut self, rhs: Matrix<N, N>) {
+////////////////////////////////////////////////////////////////////////////////
+// Matrix *= Matrix ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<T, const N: usize> MulAssign<T> for Matrix<N, N>
+where
+    T: AsRef<Matrix<N, N>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
         let mut mat = Matrix::default();
-
+        let rhs = rhs.as_ref();
         for r in 0..N {
             for c in 0..N {
                 mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
@@ -84,18 +95,7 @@ impl<const N: usize> MulAssign<Matrix<N, N>> for &mut Matrix<N, N> {
         **self = mat;
     }
 }
-impl<const N: usize> MulAssign<&mut Matrix<N, N>> for Matrix<N, N> {
-    fn mul_assign(&mut self, rhs: &mut Matrix<N, N>) {
-        let mut mat = Matrix::default();
 
-        for r in 0..N {
-            for c in 0..N {
-                mat[r][c] = (0..N).fold(0.0, |sum, n| sum + (self[r][n] * rhs[n][c]));
-            }
-        }
-        *self = mat;
-    }
-}
 impl<const N: usize> MulAssign<&mut Matrix<N, N>> for &mut Matrix<N, N> {
     fn mul_assign(&mut self, rhs: &mut Matrix<N, N>) {
         let mut mat = Matrix::default();

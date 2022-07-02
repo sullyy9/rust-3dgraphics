@@ -3,7 +3,7 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg};
 
-use super::Vector;
+use super::{Vector, Scalar};
 
 /// Vector + Vector = Vector
 ///
@@ -59,56 +59,56 @@ impl<const D: usize> AddAssign<&mut Vector<D>> for &mut Vector<D> {
 ///
 /// Vector * Scaler = Vector.
 ///
-impl<T: Into<f64>, const D: usize> Mul<T> for Vector<D> {
+impl<const D: usize> Mul<Scalar> for Vector<D> {
     type Output = Vector<D>;
-    fn mul(self, rhs: T) -> Self::Output {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         Vector(self.0.mul(rhs))
     }
 }
-impl<T: Into<f64>, const D: usize> Mul<T> for &Vector<D> {
+impl<const D: usize> Mul<Scalar> for &Vector<D> {
     type Output = Vector<D>;
-    fn mul(self, rhs: T) -> Self::Output {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         Vector(self.0.mul(rhs))
     }
 }
 
 /// Vector *= Scaler.
 ///
-impl<T: Into<f64>, const D: usize> MulAssign<T> for Vector<D> {
-    fn mul_assign(&mut self, rhs: T) {
+impl<const D: usize> MulAssign<Scalar> for Vector<D> {
+    fn mul_assign(&mut self, rhs: Scalar) {
         self.0.mul_assign(rhs);
     }
 }
-impl<T: Into<f64>, const D: usize> MulAssign<T> for &mut Vector<D> {
-    fn mul_assign(&mut self, rhs: T) {
+impl<const D: usize> MulAssign<Scalar> for &mut Vector<D> {
+    fn mul_assign(&mut self, rhs: Scalar) {
         self.0.mul_assign(rhs);
     }
 }
 
 /// Vector / Scaler = Vector.
 ///
-impl<T: Into<f64>, const D: usize> Div<T> for Vector<D> {
+impl<const D: usize> Div<Scalar> for Vector<D> {
     type Output = Vector<D>;
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: Scalar) -> Self::Output {
         Vector(self.0.div(rhs))
     }
 }
-impl<T: Into<f64>, const D: usize> Div<T> for &Vector<D> {
+impl<const D: usize> Div<Scalar> for &Vector<D> {
     type Output = Vector<D>;
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: Scalar) -> Self::Output {
         Vector(self.0.div(rhs))
     }
 }
 
 /// Vector /= Scaler.
 ///
-impl<T: Into<f64>, const D: usize> DivAssign<T> for Vector<D> {
-    fn div_assign(&mut self, rhs: T) {
+impl<const D: usize> DivAssign<Scalar> for Vector<D> {
+    fn div_assign(&mut self, rhs: Scalar) {
         self.0.div_assign(rhs);
     }
 }
-impl<T: Into<f64>, const D: usize> DivAssign<T> for &mut Vector<D> {
-    fn div_assign(&mut self, rhs: T) {
+impl<const D: usize> DivAssign<Scalar> for &mut Vector<D> {
+    fn div_assign(&mut self, rhs: Scalar) {
         self.0.div_assign(rhs);
     }
 }

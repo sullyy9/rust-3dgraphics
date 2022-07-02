@@ -3,7 +3,7 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
 
-use super::{Matrix, Point, Vector};
+use super::{Matrix, Point, Scalar, Vector};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Point + Vector = Point //////////////////////////////////////////////////////
@@ -72,21 +72,15 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point * Scaler = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const D: usize> Mul<T> for Point<D>
-where
-    T: Into<f64>,
-{
+impl<const D: usize> Mul<Scalar> for Point<D> {
     type Output = Point<D>;
-    fn mul(self, rhs: T) -> Self::Output {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
-impl<T, const D: usize> Mul<T> for &Point<D>
-where
-    T: Into<f64>,
-{
+impl<const D: usize> Mul<Scalar> for &Point<D> {
     type Output = Point<D>;
-    fn mul(self, rhs: T) -> Self::Output {
+    fn mul(self, rhs: Scalar) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
@@ -94,19 +88,13 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point *= Scaler /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const D: usize> MulAssign<T> for Point<D>
-where
-    T: Into<f64>,
-{
-    fn mul_assign(&mut self, rhs: T) {
+impl<const D: usize> MulAssign<Scalar> for Point<D> {
+    fn mul_assign(&mut self, rhs: Scalar) {
         self.0.mul_assign(rhs);
     }
 }
-impl<T, const D: usize> MulAssign<T> for &mut Point<D>
-where
-    T: Into<f64>,
-{
-    fn mul_assign(&mut self, rhs: T) {
+impl<const D: usize> MulAssign<Scalar> for &mut Point<D> {
+    fn mul_assign(&mut self, rhs: Scalar) {
         self.0.mul_assign(rhs);
     }
 }
@@ -114,21 +102,15 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point / Scaler = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const D: usize> Div<T> for Point<D>
-where
-    T: Into<f64>,
-{
+impl<const D: usize> Div<Scalar> for Point<D> {
     type Output = Point<D>;
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: Scalar) -> Self::Output {
         Point(self.0.div(rhs))
     }
 }
-impl<T, const D: usize> Div<T> for &Point<D>
-where
-    T: Into<f64>,
-{
+impl<const D: usize> Div<Scalar> for &Point<D> {
     type Output = Point<D>;
-    fn div(self, rhs: T) -> Self::Output {
+    fn div(self, rhs: Scalar) -> Self::Output {
         Point(self.0.div(rhs))
     }
 }
@@ -136,19 +118,13 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point /= Scaler /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const D: usize> DivAssign<T> for Point<D>
-where
-    T: Into<f64>,
-{
-    fn div_assign(&mut self, rhs: T) {
+impl<const D: usize> DivAssign<Scalar> for Point<D> {
+    fn div_assign(&mut self, rhs: Scalar) {
         self.0.div_assign(rhs);
     }
 }
-impl<T, const D: usize> DivAssign<T> for &mut Point<D>
-where
-    T: Into<f64>,
-{
-    fn div_assign(&mut self, rhs: T) {
+impl<const D: usize> DivAssign<Scalar> for &mut Point<D> {
+    fn div_assign(&mut self, rhs: Scalar) {
         self.0.div_assign(rhs);
     }
 }

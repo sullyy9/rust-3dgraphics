@@ -3,11 +3,11 @@
 
 use std::ops::Sub;
 
-use super::{Vector, Matrix, Point};
+use super::{Matrix, Point, Scalar, Vector};
 
 impl<const D: usize> Default for Vector<D> {
-    /// Construct a zero length vector. 
-    /// 
+    /// Construct a zero length vector.
+    ///
     fn default() -> Self {
         Self(Matrix::new([[0.0; D]]))
     }
@@ -43,14 +43,13 @@ impl<const D: usize> Vector<D> {
             (vector1.0[0][0] * vector2.0[0][1]) - (vector1.0[0][1] * vector2.0[0][0]);
 
         // Normalise the vector (It's magnitude should be 1).
-        normal_vector /= f64::sqrt(
+        normal_vector /= Scalar(f64::sqrt(
             normal_vector.0[0][0].powi(2)
                 + normal_vector.0[0][1].powi(2)
                 + normal_vector.0[0][2].powi(2),
-        );
+        ));
         normal_vector
     }
-
 }
 
 impl<const D: usize> From<Matrix<1, D>> for Vector<D> {

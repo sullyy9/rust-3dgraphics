@@ -8,7 +8,8 @@ mod index;
 mod iter;
 mod method;
 
-pub(self) use super::{Dim, Matrix, Point};
+// Internal re-exports for types required by sub-modules
+pub(self) use super::{Dim, Matrix, Point, Scalar};
 
 /// Type representing an N dimensional vector.
 ///
@@ -26,7 +27,7 @@ mod tests {
     #[test]
     fn test_scaler_mul() {
         let coords = [0.43, 56.28, -87.52, -0.23];
-        let scaler = 4.87;
+        let scaler = Scalar(4.87);
 
         let coords_scaled = coords.map(|coord| coord * 4.87);
 
@@ -40,7 +41,7 @@ mod tests {
     #[test]
     fn test_scaler_div() {
         let coords = [0.43, 56.28, -87.52, -0.23];
-        let scaler = 4.87;
+        let scaler = Scalar(4.87);
 
         let coords_scaled = coords.map(|coord| coord / 4.87);
 

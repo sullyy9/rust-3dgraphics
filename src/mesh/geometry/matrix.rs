@@ -7,7 +7,7 @@ mod mat;
 mod multiplication;
 mod subtraction;
 
-// Internal re-exports for sub-modules
+// Internal re-exports for types required by sub-modules
 pub(self) use super::Scalar;
 
 // External re-exports.
