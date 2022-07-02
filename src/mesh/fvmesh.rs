@@ -10,7 +10,7 @@ use super::{
         Point, Scalar, Vector,
     },
     transform::Transform,
-    {IndexPoly, Matrix4X4, RefPoly, Vertex},
+    {IndexPoly, RefPoly, Vertex},
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ impl Mesh {
 impl Mesh {
     /// Create a new mesh that has been run through the pipeline and contains only the polygons that should be drawn.
     ///
-    pub fn run_pipeline(&self, project_mat: &Matrix4X4, window_size: [f64; 2]) -> Mesh {
+    pub fn run_pipeline(&self, project_mat: &Transform, window_size: [f64; 2]) -> Mesh {
         let mut processed_mesh = self.clone();
         processed_mesh.apply_transformations();
         processed_mesh.find_normals();
@@ -112,11 +112,11 @@ impl Mesh {
     ///
     pub fn apply_transformations(&mut self) {
         let transformation = Transform::builder()
-            .add_x_rotation(self.physics.orientation.vector().x)
-            .add_y_rotation(self.physics.orientation.vector().y)
-            .add_z_rotation(self.physics.orientation.vector().z)
-            .add_translation(self.physics.position.vector_from(&Point::new([0, 0, 0])))
-            .build();
+            .rotate_about_x(self.physics.orientation.vector().x)
+            .rotate_about_y(self.physics.orientation.vector().y)
+            .rotate_about_z(self.physics.orientation.vector().z)
+            .translate(self.physics.position.vector_from(&Point::new([0, 0, 0])))
+            .build_affine();
 
         self.verticies
             .iter_mut()
@@ -142,11 +142,11 @@ impl Mesh {
 
     /// Project the mesh from camera space to NDC space by applying a projection matrix to each vertex
     ///
-    pub fn project_to_ndc(&mut self, projection_matrix: &Matrix4X4) {
-        for vertex in self.verticies.iter_mut() {
-            *vertex = *vertex * (*projection_matrix);
-            *vertex /= Scalar(vertex[W]);
-        }
+    pub fn project_to_ndc(&mut self, projection_matrix: &Transform) {
+        self.verticies.iter_mut().for_each(|mut vertex| {
+            vertex *= projection_matrix;
+            vertex /= Scalar(vertex[W]);
+        });
     }
 
     /// Copy any polygons that are at least partially within ndc space, into the visible polygon list.

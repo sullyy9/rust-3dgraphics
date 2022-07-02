@@ -1,5 +1,8 @@
 use crate::{
-    mesh::{geometry::Dim, Matrix4X4},
+    mesh::{
+        geometry::{Dim, Scalar},
+        Transform,
+    },
     rasterizer::EdgeTable,
 };
 
@@ -30,7 +33,7 @@ pub struct GraphicsWindow {
     near_plane: f64,
     far_plane: f64,
     fov: f64,
-    pub projection_matrix: Matrix4X4,
+    pub projection_matrix: Transform,
 }
 impl GraphicsWindow {
     ///
@@ -62,19 +65,15 @@ impl GraphicsWindow {
         let far_plane = 1000.0;
         let fov = 45.0;
 
-        let projection_matrix = {
-            let aspect_ratio = width as f64 / height as f64;
-            let x_mul = (1.0 / f64::tan(fov / 2.0)) / aspect_ratio;
-            let y_mul = 1.0 / f64::tan(fov / 2.0);
-            let z1_mul = far_plane / (far_plane - near_plane);
-            let z2_mul = -1.0 * (far_plane * near_plane) / (far_plane - near_plane);
-            Matrix4X4([
-                [x_mul, 0.0, 0.0, 0.0],
-                [0.0, y_mul, 0.0, 0.0],
-                [0.0, 0.0, z1_mul, 1.0],
-                [0.0, 0.0, z2_mul, 0.0],
-            ])
-        };
+        let aspect_ratio = width as f64 / height as f64;
+        let (near, far) = (near_plane, far_plane);
+
+        let projection_matrix = Transform::builder()
+            .scale_x(Scalar((1.0 / f64::tan(fov / 2.0)) / aspect_ratio))
+            .scale_y(Scalar(1.0 / f64::tan(fov / 2.0)))
+            .scale_z(Scalar(far / (far - near)))
+            .translate_z(-(far * near) / (far - near))
+            .build_projection();
 
         GraphicsWindow {
             window,
@@ -100,19 +99,14 @@ impl GraphicsWindow {
         // Recalculate the projection matrix
         self.projection_matrix = {
             let aspect_ratio = width as f64 / height as f64;
+            let (near, far) = (self.near_plane, self.far_plane);
 
-            let x_mul = (1.0 / f64::tan(self.fov / 2.0)) / aspect_ratio;
-            let y_mul = 1.0 / f64::tan(self.fov / 2.0);
-            let z1_mul = self.far_plane / (self.far_plane - self.near_plane);
-            let z2_mul =
-                -1.0 * (self.far_plane * self.near_plane) / (self.far_plane - self.near_plane);
-
-            Matrix4X4([
-                [x_mul, 0.0, 0.0, 0.0],
-                [0.0, y_mul, 0.0, 0.0],
-                [0.0, 0.0, z1_mul, 1.0],
-                [0.0, 0.0, z2_mul, 0.0],
-            ])
+            Transform::builder()
+                .scale_x(Scalar((1.0 / f64::tan(self.fov / 2.0)) / aspect_ratio))
+                .scale_y(Scalar(1.0 / f64::tan(self.fov / 2.0)))
+                .scale_z(Scalar(far / (far - near)))
+                .translate_z(-(far * near) / (far - near))
+                .build_projection()
         };
 
         self.width = width;
