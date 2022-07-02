@@ -4,12 +4,10 @@ mod matrix;
 mod orientation;
 mod orientation_vector;
 mod point;
+mod scalar;
 mod vector;
 
-pub use dimension::Dim;
-pub use matrix::Matrix;
-pub use orientation::Orientation3D;
-pub use orientation_vector::OrientationVector3D;
-pub use point::Point;
-pub use vector::Vector;
-pub use bounding_box::BBox;
+pub use self::{
+    bounding_box::BBox, dimension::Dim, matrix::Matrix, orientation::Orientation3D,
+    orientation_vector::OrientationVector3D, point::Point, vector::Vector, scalar::Scalar,
+};
