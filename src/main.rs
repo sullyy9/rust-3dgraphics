@@ -2,18 +2,27 @@ mod mesh;
 mod physics;
 mod rasterizer;
 mod window;
-//mod world_object;
+mod world_object;
 
-use crate::{
-    mesh::geometry::{Dim, OrientationVector3D, Point, Vector},
-    mesh::Mesh,
-    rasterizer::EdgeTable,
-    window::{DrawType, GraphicsWindow},
+use std::{
+    path::Path,
+    time::{Duration, Instant},
 };
-use std::time::{Duration, Instant};
+
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+};
+
+use crate::{
+    mesh::{
+        face_vertex::{Mesh, Visibility},
+        geometry::{Dim, OrientationVector3D, Point, Vector},
+        BBox, Pipeline, Scalar, Transform,
+    },
+    physics::PhysicalState,
+    rasterizer::EdgeTable,
+    window::{Colour, DrawType, GraphicsWindow},
 };
 
 fn main() -> ! {
@@ -22,11 +31,11 @@ fn main() -> ! {
     let mut window = GraphicsWindow::new(960, 720, &event_loop);
     window.clear();
 
-    // Build a mesh in the form of a cube.
-    // Set it's initial position and velocities so that it moves around the screen.
-    let mut cube = Mesh::default();
-    cube.load_cube(100.0);
-    cube.physics.position = Point::new([0, 0, 400]);
+    //let cube = Mesh::new_cube(100.0);
+    let cube = Mesh::new(Path::new("./resources/teapot.obj"));
+    let mut physics = PhysicalState::new();
+    physics.position = Point::new([0, 0, 400]);
+
     let mut cube_velocity = Vector::new([1, 1, 1]);
 
     // Set controls for pausing and manually advancing each frame.
@@ -52,20 +61,13 @@ fn main() -> ! {
                 event,
                 window_id: _,
             } => match event {
-                // User wants to close the window.
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-
-                // User has resized the window.
                 WindowEvent::Resized(size) => window.resize(size.width, size.height),
-
-                // User has pressed a key.
                 WindowEvent::ReceivedCharacter(char) => match char {
                     ' ' => pause = !pause,
                     'n' => advance_frame = true,
                     _ => {}
                 },
-
-                // Anything else.
                 _ => {}
             },
 
@@ -96,31 +98,63 @@ fn main() -> ! {
                 window.clear();
 
                 // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if cube.physics.position[Dim::X].abs() >= 200.0 {
+                if physics.position[Dim::X].abs() >= 200.0 {
                     cube_velocity[Dim::X] = -cube_velocity[Dim::X];
                 }
-                if cube.physics.position[Dim::Y].abs() >= 150.0 {
+                if physics.position[Dim::Y].abs() >= 150.0 {
                     cube_velocity[Dim::Y] = -cube_velocity[Dim::Y];
                 }
-                if cube.physics.position[Dim::Z] >= 500.0 || cube.physics.position[Dim::Z] <= 0.0 {
+                if physics.position[Dim::Z] >= 500.0 || physics.position[Dim::Z] <= 0.0 {
                     cube_velocity[Dim::Z] = -cube_velocity[Dim::Z];
                 }
 
                 // Move and rotate the mesh.
-                cube.physics.position.translate(&cube_velocity);
-                cube.physics.orientation += OrientationVector3D::new(1, 0.6, 3);
+                physics.position.translate(&cube_velocity);
+                physics.orientation += OrientationVector3D::new(1, 0.6, 3);
 
-                // Get a copy of the cube that's been run through the pipeline.
-                // This copy will be in NDC space.
-                let cube_pipe = cube.run_pipeline(
-                    &window.projection_matrix,
-                    [window.width as f64, window.height as f64],
-                );
+                let world_transform = Transform::builder()
+                    .scale(Scalar(10.0))
+                    .rotate_about_x(physics.orientation.vector().x)
+                    .rotate_about_y(physics.orientation.vector().y)
+                    .rotate_about_z(physics.orientation.vector().z)
+                    .translate(physics.position.vector_from(&Point::new([0, 0, 0])))
+                    .build_affine();
 
-                // Generate an edge table for every polygon in the mesh and draw it to the screen buffer.
-                for polygon in cube_pipe.iter_visible_polygons() {
-                    window.draw_polygon(&EdgeTable::new(polygon), DrawType::Fill);
-                }
+                let screen_transform = Transform::builder()
+                    .translate_x(1.0)
+                    .translate_y(1.0)
+                    .scale_x(Scalar::from(window.width / 2))
+                    .scale_y(Scalar::from(window.height / 2))
+                    .scale_z(Scalar::from(-1000))
+                    .translate_z(1000.0)
+                    .build_affine();
+
+                let ndc_bounds = BBox::new(Point::new([-1, -1, -1, -1]), Point::new([1, 1, 1, 1]));
+
+                let screen_mesh = cube
+                    .start_pipeline()
+                    .transform(&world_transform)
+                    .update_normals()
+                    .transform(&window.projection_matrix)
+                    .update_visibility(&ndc_bounds)
+                    .transform(&screen_transform);
+
+                let visible_polygons = screen_mesh.iter().filter(|polygon| match polygon.visible {
+                    None => false,
+                    Some(v) if *v == Visibility::None => false,
+                    _ => true,
+                });
+
+                visible_polygons.for_each(|polygon| {
+                    let colour = if let Some(normal) = polygon.normal {
+                        let intensity = ((-normal[Dim::Z] + 1.0) * 127.0) as u8;
+                        Colour([0, intensity, 0, u8::max_value()])
+                    } else {
+                        Colour([u8::max_value(), 0, 0, u8::max_value()])
+                    };
+
+                    window.draw_polygon(&EdgeTable::from(polygon), DrawType::Fill, &colour);
+                });
 
                 // Render the screen buffer.
                 window.render();

@@ -45,11 +45,14 @@ impl<const D: usize> BBox<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Method Implementations //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+pub trait Bounding<const D: usize> {
+    fn bounds(&self, point: &Point<D>) -> bool;
+}
 
-impl<const D: usize> BBox<D> {
+impl<const D: usize> Bounding<D> for BBox<D> {
     /// Return true if a point lies within a bounding box. Return else otherwise
     ///
-    pub fn bounds(&self, point: &Point<D>) -> bool {
+    fn bounds(&self, point: &Point<D>) -> bool {
         point
             .into_iter()
             .zip(self.0.iter())

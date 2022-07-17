@@ -1,6 +1,6 @@
 use crate::mesh::{
     geometry::{Dim, Vector},
-    RefPoly, Vertex,
+    Point, face_vertex,
 };
 use std::mem::swap;
 
@@ -73,62 +73,6 @@ pub struct EdgeTable {
 // Constructor function and helpers
 impl EdgeTable {
     ///
-    /// Create a new EdgeTable from a screen space polygon.
-    ///
-    pub fn new(poly: RefPoly) -> EdgeTable {
-        let [mut vert1, mut vert2, mut vert3] = poly.verticies;
-
-        // Order the verticies in increasing order of X
-        if vert2[Dim::X] < vert1[Dim::X] && vert2[Dim::X] < vert3[Dim::X] {
-            swap(&mut vert1, &mut vert2);
-        } else if vert3[Dim::X] < vert1[Dim::X] && vert3[Dim::X] < vert2[Dim::X] {
-            swap(&mut vert1, &mut vert3);
-        }
-        if vert3[Dim::X] < vert2[Dim::X] {
-            swap(&mut vert2, &mut vert3);
-        }
-
-        // Add enough elements to the table to encompass the polygon in the Y axis
-        let (ymin, ymax) = {
-            let (min, max) = EdgeTable::min_max(vert1[Dim::Y], vert2[Dim::Y], vert3[Dim::Y]);
-            (min as i32, max as i32)
-        };
-        let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
-
-        // Declare lines in clockwise order around the polygon but keep the leftmost point first.
-        let mut line1 = {
-            let gradient = (vert2[Dim::Y] - vert1[Dim::Y]) / (vert2[Dim::X] - vert1[Dim::X]);
-            (vert1, vert2, gradient)
-        };
-        let mut line2 = {
-            let gradient = (vert3[Dim::Y] - vert2[Dim::Y]) / (vert3[Dim::X] - vert2[Dim::X]);
-            (vert2, vert3, gradient)
-        };
-        let mut line3 = {
-            let gradient = (vert3[Dim::Y] - vert1[Dim::Y]) / (vert3[Dim::X] - vert1[Dim::X]);
-            (vert1, vert3, gradient)
-        };
-
-        // Order the lines into the order they should be drawn
-        if (line1.2 > 0.0 && line3.2 < 0.0) || (line1.2 < 0.0 && line3.2 > 0.0) {
-            swap(&mut line2, &mut line3);
-        } else if line1.2.abs() < line3.2.abs() {
-            swap(&mut line1, &mut line3);
-        }
-
-        EdgeTable::draw_line(line1.0, line1.1, &mut table, ymin as i32);
-        EdgeTable::draw_line(line2.0, line2.1, &mut table, ymin as i32);
-        EdgeTable::draw_line(line3.0, line3.1, &mut table, ymin as i32);
-
-        EdgeTable {
-            table,
-            ymin,
-            ymax,
-            normal: *poly.normal,
-        }
-    }
-
-    ///
     /// Return the minimum and maximum values of 3 parameters as a tuple (min, max)
     ///
     fn min_max(val1: f64, val2: f64, val3: f64) -> (f64, f64) {
@@ -150,7 +94,7 @@ impl EdgeTable {
     ///
     /// Draw a line into an edge table using brezenham's algorithm
     ///
-    fn draw_line(p1: &Vertex, p2: &Vertex, table: &mut [EdgeList], yoffset: i32) {
+    fn draw_line(p1: &Point<4>, p2: &Point<4>, table: &mut [EdgeList], yoffset: i32) {
         let (x1, y1, z1) = (p1[Dim::X] as i32, p1[Dim::Y] as i32, p1[Dim::Z] as i32);
         let (x2, y2, z2) = (p2[Dim::X] as i32, p2[Dim::Y] as i32, p2[Dim::Z] as i32);
 
@@ -262,5 +206,60 @@ impl EdgeTable {
     ///
     pub fn iter_between(&self, first: usize, last: usize) -> std::slice::Iter<'_, EdgeList> {
         self.table[first..last].iter()
+    }
+}
+
+impl<'a> From<face_vertex::Polygon<'a>> for EdgeTable {
+    fn from(polygon: face_vertex::Polygon<'a>) -> Self {
+        let [mut vert1, mut vert2, mut vert3] = polygon.vertex;
+
+        // Order the verticies in increasing order of X
+        if vert2[Dim::X] < vert1[Dim::X] && vert2[Dim::X] < vert3[Dim::X] {
+            swap(&mut vert1, &mut vert2);
+        } else if vert3[Dim::X] < vert1[Dim::X] && vert3[Dim::X] < vert2[Dim::X] {
+            swap(&mut vert1, &mut vert3);
+        }
+        if vert3[Dim::X] < vert2[Dim::X] {
+            swap(&mut vert2, &mut vert3);
+        }
+
+        // Add enough elements to the table to encompass the polygon in the Y axis
+        let (ymin, ymax) = {
+            let (min, max) = EdgeTable::min_max(vert1[Dim::Y], vert2[Dim::Y], vert3[Dim::Y]);
+            (min as i32, max as i32)
+        };
+        let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
+
+        // Declare lines in clockwise order around the polygon but keep the leftmost point first.
+        let mut line1 = {
+            let gradient = (vert2[Dim::Y] - vert1[Dim::Y]) / (vert2[Dim::X] - vert1[Dim::X]);
+            (vert1, vert2, gradient)
+        };
+        let mut line2 = {
+            let gradient = (vert3[Dim::Y] - vert2[Dim::Y]) / (vert3[Dim::X] - vert2[Dim::X]);
+            (vert2, vert3, gradient)
+        };
+        let mut line3 = {
+            let gradient = (vert3[Dim::Y] - vert1[Dim::Y]) / (vert3[Dim::X] - vert1[Dim::X]);
+            (vert1, vert3, gradient)
+        };
+
+        // Order the lines into the order they should be drawn
+        if (line1.2 > 0.0 && line3.2 < 0.0) || (line1.2 < 0.0 && line3.2 > 0.0) {
+            swap(&mut line2, &mut line3);
+        } else if line1.2.abs() < line3.2.abs() {
+            swap(&mut line1, &mut line3);
+        }
+
+        EdgeTable::draw_line(line1.0, line1.1, &mut table, ymin as i32);
+        EdgeTable::draw_line(line2.0, line2.1, &mut table, ymin as i32);
+        EdgeTable::draw_line(line3.0, line3.1, &mut table, ymin as i32);
+
+        EdgeTable {
+            table,
+            ymin,
+            ymax,
+            normal: Vector::default(),
+        }
     }
 }

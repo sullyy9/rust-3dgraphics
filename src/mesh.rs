@@ -1,18 +1,12 @@
 //! Implementation of primitive geometric data types. E.g. 3D point, 3D vector, etc.
 //!
 
-mod fvmesh;
-mod polygon;
+pub mod face_vertex;
 mod transform;
-mod vertex;
-mod face_vertex;
 
 pub mod geometry;
 pub use self::{
-    fvmesh::Mesh,
-    // static_mesh::StaticMesh,
-    // dynamic_mesh::DynamicMesh,
-    polygon::{IndexPoly, Polygon, RefPoly},
+    face_vertex::Pipeline,
+    geometry::{BBox, Bounding, Dim, Point, Scalar, Vector},
     transform::Transform,
-    vertex::Vertex,
 };

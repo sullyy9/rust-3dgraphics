@@ -1,8 +1,5 @@
 use crate::{
-    mesh::{
-        geometry::{Dim, Scalar},
-        Transform,
-    },
+    mesh::{geometry::Scalar, Transform},
     rasterizer::EdgeTable,
 };
 
@@ -13,7 +10,19 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-type Colour = [u8; 4];
+pub struct Colour(pub [u8; 4]);
+
+impl From<[u8; 4]> for Colour {
+    fn from(colour: [u8; 4]) -> Self {
+        Colour(colour)
+    }
+}
+
+impl<'a> Colour {
+    pub fn as_slice(&'a self) -> &'a [u8] {
+        &self.0
+    }
+}
 
 #[derive(PartialEq)]
 pub enum DrawType {
@@ -130,14 +139,7 @@ impl GraphicsWindow {
     ///
     /// Draw a polygon using rasterization.
     ///
-    pub fn draw_polygon(&mut self, edge_table: &EdgeTable, style: DrawType) {
-        // Calculate the green intensity from the z part of the polygons normal.
-        // the Z normal will be between -1 and 1 with -1 facing the camera
-        let colour = {
-            let intensity = ((-edge_table.normal[Dim::Z] + 1.0) * 127.0) as u8;
-            [0, intensity, 0, 255]
-        };
-
+    pub fn draw_polygon(&mut self, edge_table: &EdgeTable, style: DrawType, colour: &Colour) {
         // Draw a rasterized polygon
         if style == DrawType::Fill || style == DrawType::Both {
             // Find the first and last elements we want to iterate between in the edge table.
@@ -198,7 +200,7 @@ impl GraphicsWindow {
             for edges in edge_table.iter() {
                 for xzpair in edges.iter() {
                     if xzpair.x >= 0 && xzpair.x < self.width as i32 {
-                        self.draw_pixel(xzpair.x as u32, y as u32, [255, 0, 0, 255]);
+                        self.draw_pixel(xzpair.x as u32, y as u32, &Colour::from([255, 0, 0, 255]));
                     }
                 }
                 y += 1;
@@ -209,7 +211,7 @@ impl GraphicsWindow {
     ///
     /// Set a pixels colour via x and y coordinates with the origin in the bottom left corner.
     ///
-    pub fn draw_pixel(&mut self, x: u32, y: u32, colour: Colour) {
+    pub fn draw_pixel(&mut self, x: u32, y: u32, colour: &Colour) {
         // Figure out which 4 elements we need from the x and y coordinates then get a
         // pointer to the 4 elements which consitute the pixel.
         let element = {
@@ -223,7 +225,7 @@ impl GraphicsWindow {
             .get_mut(element..(element + 4))
             .unwrap();
 
-        pixel.copy_from_slice(&colour);
+        pixel.copy_from_slice(colour.as_slice());
     }
 
     ///
