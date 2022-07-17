@@ -1,3 +1,4 @@
+mod camera;
 mod mesh;
 mod rasterizer;
 mod window;
@@ -9,19 +10,37 @@ use std::{
 };
 
 use winit::{
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
-use world_object::WorldObject;
 
 use crate::{
+    camera::Camera,
     mesh::{
         geometry::{Dim, OrientationVector3D, Point, Vector},
         BBox, Mesh, Pipeline, Renderable, Scalar, Transform, Visibility,
     },
     rasterizer::EdgeTable,
     window::{Colour, DrawType, GraphicsWindow},
+    world_object::WorldObject,
 };
+
+#[derive(Default)]
+struct CameraControls {
+    move_forward: bool,
+    move_backward: bool,
+    move_left: bool,
+    move_right: bool,
+    move_up: bool,
+    move_down: bool,
+
+    look_left: bool,
+    look_right: bool,
+    look_up: bool,
+    look_down: bool,
+    look_cw: bool,
+    look_acw: bool,
+}
 
 fn main() -> ! {
     // Create the window
@@ -32,6 +51,9 @@ fn main() -> ! {
     //let cube = Mesh::new_cube(100.0);
     let mut teapot = WorldObject::new(Mesh::new(Path::new("./resources/teapot.obj")));
     teapot.position = Point::new([0, 0, 400]);
+
+    let mut camera = Camera::new(Point::new([0, 0, 0]));
+    let mut controls = CameraControls::default();
 
     let mut cube_velocity = Vector::new([1, 1, 1]);
 
@@ -60,11 +82,54 @@ fn main() -> ! {
             } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                 WindowEvent::Resized(size) => window.resize(size.width, size.height),
-                WindowEvent::ReceivedCharacter(char) => match char {
-                    ' ' => pause = !pause,
-                    'n' => advance_frame = true,
-                    _ => {}
-                },
+                WindowEvent::KeyboardInput {
+                    device_id: _,
+                    input,
+                    ..
+                } => {
+                    if let Some(key) = input.virtual_keycode {
+                        let state = input.state;
+                        use ElementState::*;
+                        use VirtualKeyCode as KeyCode;
+                        match key {
+                            KeyCode::Escape => *control_flow = ControlFlow::Exit,
+                            KeyCode::Space => pause = !pause,
+                            KeyCode::N => advance_frame = true,
+
+                            KeyCode::W if state == Pressed => controls.move_forward = true,
+                            KeyCode::W if state == Released => controls.move_forward = false,
+                            KeyCode::S if state == Pressed => controls.move_backward = true,
+                            KeyCode::S if state == Released => controls.move_backward = false,
+
+                            KeyCode::A if state == Pressed => controls.move_left = true,
+                            KeyCode::A if state == Released => controls.move_left = false,
+                            KeyCode::D if state == Pressed => controls.move_right = true,
+                            KeyCode::D if state == Released => controls.move_right = false,
+
+                            KeyCode::LShift if state == Pressed => controls.move_up = true,
+                            KeyCode::LShift if state == Released => controls.move_up = false,
+                            KeyCode::LControl if state == Pressed => controls.move_down = true,
+                            KeyCode::LControl if state == Released => controls.move_down = false,
+
+                            KeyCode::Up if state == Pressed => controls.look_up = true,
+                            KeyCode::Up if state == Released => controls.look_up = false,
+                            KeyCode::Down if state == Pressed => controls.look_down = true,
+                            KeyCode::Down if state == Released => controls.look_down = false,
+
+                            KeyCode::Left if state == Pressed => controls.look_left = true,
+                            KeyCode::Left if state == Released => controls.look_left = false,
+                            KeyCode::Right if state == Pressed => controls.look_right = true,
+                            KeyCode::Right if state == Released => controls.look_right = false,
+
+                            KeyCode::E if state == Pressed => controls.look_cw = true,
+                            KeyCode::E if state == Released => controls.look_cw = false,
+                            KeyCode::Q if state == Pressed => controls.look_acw = true,
+                            KeyCode::Q if state == Released => controls.look_acw = false,
+
+                            _ => {}
+                        }
+                    }
+                }
                 _ => {}
             },
 
@@ -94,20 +159,22 @@ fn main() -> ! {
                 println!("New frame---------------------");
                 window.clear();
 
-                // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if teapot.position[Dim::X].abs() >= 200.0 {
-                    cube_velocity[Dim::X] = -cube_velocity[Dim::X];
-                }
-                if teapot.position[Dim::Y].abs() >= 150.0 {
-                    cube_velocity[Dim::Y] = -cube_velocity[Dim::Y];
-                }
-                if teapot.position[Dim::Z] >= 500.0 || teapot.position[Dim::Z] <= 0.0 {
-                    cube_velocity[Dim::Z] = -cube_velocity[Dim::Z];
-                }
-
-                // Move and rotate the mesh.
-                teapot.position += cube_velocity;
-                teapot.orientation += OrientationVector3D::new(1, 0.6, 3);
+                let map_move = |positive, negative| {
+                    let mut movement = 0.0;
+                    if positive {
+                        movement += 1.0;
+                    }
+                    if negative {
+                        movement -= 1.0;
+                    }
+                    movement
+                };
+                camera.position[Dim::X] += map_move(controls.move_right, controls.move_left);
+                camera.position[Dim::Y] += map_move(controls.move_up, controls.move_down);
+                camera.position[Dim::Z] += map_move(controls.move_forward, controls.move_backward);
+                camera.orientation.x += map_move(controls.look_up, controls.look_down);
+                camera.orientation.y += map_move(controls.look_left, controls.look_right);
+                camera.orientation.z += map_move(controls.look_cw, controls.look_acw);
 
                 let world_transform = Transform::builder()
                     .scale(Scalar(10.0))
@@ -132,6 +199,7 @@ fn main() -> ! {
                     .mesh
                     .start_pipeline()
                     .transform(&world_transform)
+                    .transform(&camera.view_transform())
                     .update_normals()
                     .transform(&window.projection_matrix)
                     .update_visibility(&ndc_bounds)
