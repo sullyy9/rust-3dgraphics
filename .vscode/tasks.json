@@ -1,82 +1,63 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // Linux build targets.
         {
+            "label": "Build Debug Linux",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "build"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "Build Debug Linux"
+            "args": ["build"],
+            "problemMatcher": ["$rustc"]
         },
         {
+            "label": "Build Release Linux",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "build",
-                "--target=x86_64-pc-windows-gnu"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "Build Debug Windows"
+            "args": ["build", "--release"],
+            "problemMatcher": ["$rustc"]
         },
         {
+            "label": "Run Debug",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "build",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "Build Release Linux"
+            "args": ["run"],
+            "problemMatcher": ["$rustc"]
         },
         {
+            "label": "Run Release",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "build",
-                "--target=x86_64-pc-windows-gnu",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "Build Release Windows"
+            "args": ["run", "--release"],
+            "problemMatcher": ["$rustc"]
         },
         {
+            "label": "Test",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "run",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
+            "args": ["test"],
+            "problemMatcher": ["$rustc"]
+        },
+        // Windows build targets.
+        {
+            "label": "Build Debug Windows",
             "group": "build",
-            "label": "Run"
+            "type": "shell",
+            "command": "cargo",
+            "args": ["build", "--target=x86_64-pc-windows-gnu"],
+            "problemMatcher": ["$rustc"]
         },
         {
+            "label": "Build Release Windows",
+            "group": "build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "test"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "Test"
+            "args": ["build", "--release", "--target=x86_64-pc-windows-gnu"],
+            "problemMatcher": ["$rustc"]
         }
     ]
 }
