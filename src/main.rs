@@ -16,9 +16,8 @@ use winit::{
 
 use crate::{
     mesh::{
-        face_vertex::{Mesh, Visibility},
         geometry::{Dim, OrientationVector3D, Point, Vector},
-        BBox, Pipeline, Scalar, Transform,
+        BBox, Mesh, Pipeline, Scalar, Transform, Visibility,
     },
     physics::PhysicalState,
     rasterizer::EdgeTable,

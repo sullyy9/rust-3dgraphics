@@ -1,6 +1,6 @@
 use crate::mesh::{
     geometry::{Dim, Vector},
-    Point, face_vertex,
+    Point, Polygon, Polygonal,
 };
 use std::mem::swap;
 
@@ -209,39 +209,42 @@ impl EdgeTable {
     }
 }
 
-impl<'a> From<face_vertex::Polygon<'a>> for EdgeTable {
-    fn from(polygon: face_vertex::Polygon<'a>) -> Self {
-        let [mut vert1, mut vert2, mut vert3] = polygon.vertex;
+impl<'a, T> From<T> for EdgeTable
+where
+    T: Polygonal,
+{
+    fn from(polygon: T) -> Self {
+        let mut vert = polygon.verticies().to_vec();
 
-        // Order the verticies in increasing order of X
-        if vert2[Dim::X] < vert1[Dim::X] && vert2[Dim::X] < vert3[Dim::X] {
-            swap(&mut vert1, &mut vert2);
-        } else if vert3[Dim::X] < vert1[Dim::X] && vert3[Dim::X] < vert2[Dim::X] {
-            swap(&mut vert1, &mut vert3);
+        // Order the verticies in increasing order of X.
+        if vert[1][Dim::X] < vert[0][Dim::X] && vert[1][Dim::X] < vert[2][Dim::X] {
+            vert.swap(0, 1);
+        } else if vert[2][Dim::X] < vert[0][Dim::X] && vert[2][Dim::X] < vert[1][Dim::X] {
+            vert.swap(0, 2);
         }
-        if vert3[Dim::X] < vert2[Dim::X] {
-            swap(&mut vert2, &mut vert3);
+        if vert[2][Dim::X] < vert[1][Dim::X] {
+            vert.swap(1, 2);
         }
 
         // Add enough elements to the table to encompass the polygon in the Y axis
         let (ymin, ymax) = {
-            let (min, max) = EdgeTable::min_max(vert1[Dim::Y], vert2[Dim::Y], vert3[Dim::Y]);
+            let (min, max) = EdgeTable::min_max(vert[0][Dim::Y], vert[1][Dim::Y], vert[2][Dim::Y]);
             (min as i32, max as i32)
         };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
         // Declare lines in clockwise order around the polygon but keep the leftmost point first.
         let mut line1 = {
-            let gradient = (vert2[Dim::Y] - vert1[Dim::Y]) / (vert2[Dim::X] - vert1[Dim::X]);
-            (vert1, vert2, gradient)
+            let gradient = (vert[1][Dim::Y] - vert[0][Dim::Y]) / (vert[1][Dim::X] - vert[0][Dim::X]);
+            (vert[0], vert[1], gradient)
         };
         let mut line2 = {
-            let gradient = (vert3[Dim::Y] - vert2[Dim::Y]) / (vert3[Dim::X] - vert2[Dim::X]);
-            (vert2, vert3, gradient)
+            let gradient = (vert[2][Dim::Y] - vert[1][Dim::Y]) / (vert[2][Dim::X] - vert[1][Dim::X]);
+            (vert[1], vert[2], gradient)
         };
         let mut line3 = {
-            let gradient = (vert3[Dim::Y] - vert1[Dim::Y]) / (vert3[Dim::X] - vert1[Dim::X]);
-            (vert1, vert3, gradient)
+            let gradient = (vert[2][Dim::Y] - vert[0][Dim::Y]) / (vert[2][Dim::X] - vert[0][Dim::X]);
+            (vert[0], vert[2], gradient)
         };
 
         // Order the lines into the order they should be drawn

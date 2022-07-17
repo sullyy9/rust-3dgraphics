@@ -1,36 +1,31 @@
 //! Implementation of a face-vertex mesh.
 //!
 
+// Re-imports.
+//
+pub(self) use super::{
+    geometry::{Point, Vector},
+    Bounding, Dim, Scalar, Transform, Polygonal
+};
+
+mod iter;
+mod pipeline;
+mod polygon;
+
+
+// Re-exports.
+//
+pub use self::{
+    pipeline::Pipeline,
+    polygon::{Polygon, Visibility},
+};
+
 use std::{
     fs::File,
     io::{BufRead, BufReader},
     marker::PhantomData,
     path::Path,
 };
-
-pub(self) use super::{
-    geometry::{Point, Vector},
-    Bounding, Dim, Scalar, Transform,
-};
-
-mod iter;
-mod pipeline;
-
-// External Re-exports.
-pub use pipeline::Pipeline;
-
-pub struct Polygon<'a> {
-    pub vertex: [&'a Point<4>; 3],
-    pub normal: Option<&'a Vector<3>>,
-    pub visible: Option<&'a Visibility>,
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub enum Visibility {
-    None,
-    Partial,
-    Full,
-}
 
 #[derive(Clone)]
 struct VIndex(pub(self) [usize; 3]);
