@@ -1,17 +1,17 @@
 //! Implementation of a face-vertex mesh.
 //!
 
+use super::Renderable;
 // Re-imports.
 //
 pub(self) use super::{
     geometry::{Point, Vector},
-    Bounding, Dim, Scalar, Transform, Polygonal
+    Bounding, Dim, Polygonal, Scalar, Transform,
 };
 
 mod iter;
 mod pipeline;
 mod polygon;
-
 
 // Re-exports.
 //
@@ -36,13 +36,11 @@ pub struct Mesh {
     vindex: Box<[VIndex]>,
 }
 
-pub struct PipeMesh<'a, T: 'a> {
+pub struct PipeMesh {
     vertex: Box<[Point<4>]>,
     vindex: Box<[VIndex]>,
     normal: Option<Box<[Vector<3>]>>,
     visible: Option<Box<[Visibility]>>,
-
-    phantom: PhantomData<&'a T>,
 }
 
 impl Mesh {
@@ -118,10 +116,12 @@ impl Mesh {
             vindex: index.into_boxed_slice(),
         }
     }
+}
 
-    /// Create a new pipeline mesh by copying the
-    ///
-    pub fn start_pipeline(&self) -> PipeMesh<()> {
+impl Renderable<PipeMesh> for Mesh {
+    type ScreenMeshBuilder = PipeMesh;
+
+    fn start_pipeline(&self) -> Self::ScreenMeshBuilder {
         let vertex = self
             .vertex
             .iter()
@@ -132,12 +132,11 @@ impl Mesh {
             vindex: self.vindex.clone(),
             normal: None,
             visible: None,
-            phantom: PhantomData,
         }
     }
 }
 
-impl<'a, T> PipeMesh<'a, T> {
+impl PipeMesh {
     pub fn iter(&self) -> iter::Iter {
         iter::Iter::new(self)
     }

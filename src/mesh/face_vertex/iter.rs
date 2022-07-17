@@ -11,7 +11,7 @@ pub struct Iter<'a> {
 }
 
 impl<'a> Iter<'a> {
-    pub fn new<T>(mesh: &'a PipeMesh<'a, T>) -> Iter<'a> {
+    pub fn new(mesh: &'a PipeMesh) -> Iter<'a> {
         Iter {
             vertex: &mesh.vertex,
             vindex: &mesh.vindex,

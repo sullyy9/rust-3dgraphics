@@ -2,14 +2,22 @@
 //!
 
 mod face_vertex;
-mod transform;
 mod polygonal;
+mod transform;
 
 pub mod geometry;
 pub use self::{
-    face_vertex::{Pipeline, Mesh, PipeMesh, Visibility, Polygon},
+    face_vertex::{Mesh, PipeMesh, Pipeline, Polygon, Visibility},
     geometry::{BBox, Bounding, Dim, Point, Scalar, Vector},
+    polygonal::Polygonal,
     transform::Transform,
-    polygonal::{Polygonal}
-
 };
+
+pub trait Renderable<ScreenMeshBuilder>
+where
+    ScreenMeshBuilder: Pipeline,
+{
+    type ScreenMeshBuilder;
+
+    fn start_pipeline(&self) -> Self::ScreenMeshBuilder;
+}

@@ -8,7 +8,7 @@ pub trait Pipeline {
         B: Bounding<4>;
 }
 
-impl<'a, T> Pipeline for PipeMesh<'a, T> {
+impl Pipeline for PipeMesh {
     fn transform(mut self, transform: &Transform) -> Self {
         self.vertex.iter_mut().for_each(|mut vertex| {
             vertex *= transform;

@@ -9,3 +9,7 @@ pub struct WorldObject<T> {
 
     pub physics: PhysicalState,
 }
+
+impl<T> WorldObject<T> {
+    
+}
