@@ -1,5 +1,4 @@
 mod mesh;
-mod physics;
 mod rasterizer;
 mod window;
 mod world_object;
@@ -13,13 +12,13 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
+use world_object::WorldObject;
 
 use crate::{
     mesh::{
         geometry::{Dim, OrientationVector3D, Point, Vector},
         BBox, Mesh, Pipeline, Renderable, Scalar, Transform, Visibility,
     },
-    physics::PhysicalState,
     rasterizer::EdgeTable,
     window::{Colour, DrawType, GraphicsWindow},
 };
@@ -31,9 +30,8 @@ fn main() -> ! {
     window.clear();
 
     //let cube = Mesh::new_cube(100.0);
-    let cube = Mesh::new(Path::new("./resources/teapot.obj"));
-    let mut physics = PhysicalState::new();
-    physics.position = Point::new([0, 0, 400]);
+    let mut teapot = WorldObject::new(Mesh::new(Path::new("./resources/teapot.obj")));
+    teapot.position = Point::new([0, 0, 400]);
 
     let mut cube_velocity = Vector::new([1, 1, 1]);
 
@@ -97,26 +95,26 @@ fn main() -> ! {
                 window.clear();
 
                 // Flip the direction of travel along an axis if its position along that axis has reached a limit.
-                if physics.position[Dim::X].abs() >= 200.0 {
+                if teapot.position[Dim::X].abs() >= 200.0 {
                     cube_velocity[Dim::X] = -cube_velocity[Dim::X];
                 }
-                if physics.position[Dim::Y].abs() >= 150.0 {
+                if teapot.position[Dim::Y].abs() >= 150.0 {
                     cube_velocity[Dim::Y] = -cube_velocity[Dim::Y];
                 }
-                if physics.position[Dim::Z] >= 500.0 || physics.position[Dim::Z] <= 0.0 {
+                if teapot.position[Dim::Z] >= 500.0 || teapot.position[Dim::Z] <= 0.0 {
                     cube_velocity[Dim::Z] = -cube_velocity[Dim::Z];
                 }
 
                 // Move and rotate the mesh.
-                physics.position.translate(&cube_velocity);
-                physics.orientation += OrientationVector3D::new(1, 0.6, 3);
+                teapot.position += cube_velocity;
+                teapot.orientation += OrientationVector3D::new(1, 0.6, 3);
 
                 let world_transform = Transform::builder()
                     .scale(Scalar(10.0))
-                    .rotate_about_x(physics.orientation.vector().x)
-                    .rotate_about_y(physics.orientation.vector().y)
-                    .rotate_about_z(physics.orientation.vector().z)
-                    .translate(physics.position.vector_from(&Point::new([0, 0, 0])))
+                    .rotate_about_x(teapot.orientation.vector().x)
+                    .rotate_about_y(teapot.orientation.vector().y)
+                    .rotate_about_z(teapot.orientation.vector().z)
+                    .translate(teapot.position.vector_from(&Point::new([0, 0, 0])))
                     .build_affine();
 
                 let screen_transform = Transform::builder()
@@ -130,7 +128,8 @@ fn main() -> ! {
 
                 let ndc_bounds = BBox::new(Point::new([-1, -1, -1, -1]), Point::new([1, 1, 1, 1]));
 
-                let screen_mesh = cube
+                let screen_mesh = teapot
+                    .mesh
                     .start_pipeline()
                     .transform(&world_transform)
                     .update_normals()

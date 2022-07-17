@@ -13,10 +13,7 @@ pub use self::{
     transform::Transform,
 };
 
-pub trait Renderable<ScreenMeshBuilder>
-where
-    ScreenMeshBuilder: Pipeline,
-{
+pub trait Renderable {
     type ScreenMeshBuilder;
 
     fn start_pipeline(&self) -> Self::ScreenMeshBuilder;

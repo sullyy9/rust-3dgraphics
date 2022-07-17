@@ -23,7 +23,6 @@ pub use self::{
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    marker::PhantomData,
     path::Path,
 };
 
@@ -118,7 +117,7 @@ impl Mesh {
     }
 }
 
-impl Renderable<PipeMesh> for Mesh {
+impl Renderable for Mesh {
     type ScreenMeshBuilder = PipeMesh;
 
     fn start_pipeline(&self) -> Self::ScreenMeshBuilder {
