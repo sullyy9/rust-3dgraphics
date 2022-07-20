@@ -1,4 +1,7 @@
-use crate::mesh::{geometry::Orientation3D, Point, Transform};
+use crate::{
+    geometry::{Orientation3D, Point},
+    mesh::Transform,
+};
 
 #[derive(Default)]
 pub struct Camera {

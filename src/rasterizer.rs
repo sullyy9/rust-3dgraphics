@@ -1,8 +1,10 @@
-use crate::mesh::{
-    geometry::{Dim, Vector},
-    Point, Polygon, Polygonal,
-};
 use std::mem::swap;
+
+use crate::{
+    geometry::{Dim, Point, Vector},
+    mesh::Polygonal,
+};
+
 
 ///
 /// Error handling
@@ -235,15 +237,18 @@ where
 
         // Declare lines in clockwise order around the polygon but keep the leftmost point first.
         let mut line1 = {
-            let gradient = (vert[1][Dim::Y] - vert[0][Dim::Y]) / (vert[1][Dim::X] - vert[0][Dim::X]);
+            let gradient =
+                (vert[1][Dim::Y] - vert[0][Dim::Y]) / (vert[1][Dim::X] - vert[0][Dim::X]);
             (vert[0], vert[1], gradient)
         };
         let mut line2 = {
-            let gradient = (vert[2][Dim::Y] - vert[1][Dim::Y]) / (vert[2][Dim::X] - vert[1][Dim::X]);
+            let gradient =
+                (vert[2][Dim::Y] - vert[1][Dim::Y]) / (vert[2][Dim::X] - vert[1][Dim::X]);
             (vert[1], vert[2], gradient)
         };
         let mut line3 = {
-            let gradient = (vert[2][Dim::Y] - vert[0][Dim::Y]) / (vert[2][Dim::X] - vert[0][Dim::X]);
+            let gradient =
+                (vert[2][Dim::Y] - vert[0][Dim::Y]) / (vert[2][Dim::X] - vert[0][Dim::X]);
             (vert[0], vert[2], gradient)
         };
 

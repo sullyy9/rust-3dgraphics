@@ -1,4 +1,5 @@
 mod camera;
+mod geometry;
 mod mesh;
 mod rasterizer;
 mod window;
@@ -16,10 +17,8 @@ use winit::{
 
 use crate::{
     camera::Camera,
-    mesh::{
-        geometry::{Dim, OrientationVector3D, Point, Vector},
-        BBox, Mesh, Pipeline, Renderable, Scalar, Transform, Visibility,
-    },
+    geometry::{BBox, Dim, Point, Scalar},
+    mesh::{Mesh, Pipeline, Renderable, Transform, Visibility},
     rasterizer::EdgeTable,
     window::{Colour, DrawType, GraphicsWindow},
     world_object::WorldObject,
@@ -54,8 +53,6 @@ fn main() -> ! {
 
     let mut camera = Camera::new(Point::new([0, 0, 0]));
     let mut controls = CameraControls::default();
-
-    let mut cube_velocity = Vector::new([1, 1, 1]);
 
     // Set controls for pausing and manually advancing each frame.
     let mut pause = false;

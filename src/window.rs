@@ -1,14 +1,12 @@
-use crate::{
-    mesh::{geometry::Scalar, Transform},
-    rasterizer::EdgeTable,
-};
-
 use pixels::{Pixels, SurfaceTexture};
+
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
 };
+
+use crate::{geometry::Scalar, mesh::Transform, rasterizer::EdgeTable};
 
 pub struct Colour(pub [u8; 4]);
 

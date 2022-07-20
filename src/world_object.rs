@@ -1,5 +1,6 @@
 use crate::{
-    mesh::{geometry::Orientation3D, Point, Renderable},
+    geometry::{Orientation3D, Point},
+    mesh::Renderable,
 };
 
 ////////////////////////////////////////////////////////////////////////////////

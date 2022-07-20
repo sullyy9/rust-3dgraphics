@@ -1,7 +1,7 @@
 //! Trait Providing an interface for Polygon types.
 //! 
 
-use super::{Point, Vector};
+use super::geometry::{Point, Vector};
 
 pub trait Polygonal {
     fn vertex_count(&self) -> usize;

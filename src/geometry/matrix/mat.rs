@@ -127,7 +127,7 @@ impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mesh::geometry::Scalar;
+    use crate::geometry::Scalar;
 
     #[test]
     fn test_index() {
