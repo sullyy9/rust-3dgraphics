@@ -3,7 +3,7 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg};
 
-use super::{Vector, Scalar};
+use super::{Vector, Scalar, Matrix};
 
 /// Vector + Vector = Vector
 ///
@@ -125,5 +125,55 @@ impl<const D: usize> Neg for &Vector<D> {
     type Output = Vector<D>;
     fn neg(self) -> Self::Output {
         self.map(|coord| coord.neg())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Point * Matrix = Point //////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for Vector<R> {
+    type Output = Vector<C>;
+    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+        Vector(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for &Vector<R> {
+    type Output = Vector<C>;
+    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+        Vector(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for Vector<R> {
+    type Output = Vector<C>;
+    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+        Vector(self.0.mul(rhs))
+    }
+}
+impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for &Vector<R> {
+    type Output = Vector<C>;
+    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+        Vector(self.0.mul(rhs))
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Point *= Matrix /////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+impl<T, const R: usize> MulAssign<T> for Vector<R>
+where
+    T: AsRef<Matrix<R, R>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        let rhs = rhs.as_ref();
+        self.0.mul_assign(rhs);
+    }
+}
+impl<T, const R: usize> MulAssign<T> for &mut Vector<R>
+where
+    T: AsRef<Matrix<R, R>>,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        let rhs = rhs.as_ref();
+        self.0.mul_assign(rhs);
     }
 }
