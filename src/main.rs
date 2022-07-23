@@ -17,7 +17,7 @@ use winit::{
 
 use crate::{
     camera::Camera,
-    geometry::{BBox, Degrees, Dim, Point, RotationAxis, Scalar},
+    geometry::{BBox, Degrees, Dim, Point, RotationAxis, Scalar, Vector},
     mesh::{Mesh, Pipeline, Renderable, Transform, Visibility},
     rasterizer::EdgeTable,
     window::{Colour, DrawType, GraphicsWindow},
@@ -166,9 +166,14 @@ fn main() -> ! {
                     }
                     movement
                 };
-                camera.position[Dim::X] += map_move(controls.move_right, controls.move_left);
-                camera.position[Dim::Y] += map_move(controls.move_up, controls.move_down);
-                camera.position[Dim::Z] += map_move(controls.move_forward, controls.move_backward);
+
+                let camera_movement = Vector::new([
+                    map_move(controls.move_right, controls.move_left),
+                    map_move(controls.move_up, controls.move_down),
+                    map_move(controls.move_forward, controls.move_backward),
+                ]);
+
+                camera.move_relative(camera_movement);
                 camera.orientation[RotationAxis::Roll] +=
                     Degrees(map_move(controls.look_up, controls.look_down));
                 camera.orientation[RotationAxis::Pitch] +=
@@ -237,6 +242,8 @@ fn main() -> ! {
                 average /= 100;
 
                 println!("average: {}, last: {}", average, last_time);
+                println!("camera position: {:?}", camera.position);
+                println!("camera orientation: {:?}", camera.orientation);
             }
             _ => (),
         }

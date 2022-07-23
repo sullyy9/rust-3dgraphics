@@ -1,5 +1,5 @@
 use crate::{
-    geometry::{Degrees, Orientation, Point, RotationAxis},
+    geometry::{Degrees, Orientation, Point, RotationAxis, Vector},
     mesh::Transform,
 };
 
@@ -23,5 +23,22 @@ impl Camera {
             .rotate_about_y(-self.orientation[RotationAxis::Pitch])
             .rotate_about_z(-self.orientation[RotationAxis::Yaw])
             .build_affine()
+    }
+
+    pub fn move_relative(&mut self, movement: Vector<3>) {
+        let movement: Vector<3> = {
+            let transform = Transform::builder()
+            .translate(self.position.vector_from(&Point::new([0, 0, 0])))
+            .rotate_about_x(self.orientation[RotationAxis::Roll])
+            .rotate_about_y(self.orientation[RotationAxis::Pitch])
+            .rotate_about_z(self.orientation[RotationAxis::Yaw])
+            .build_affine();
+
+            let mut homogenous: Vector<4> = movement.promote();
+            homogenous *= transform;
+            homogenous.demote()
+        };
+
+        self.position += movement;
     }
 }
