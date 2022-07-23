@@ -1,3 +1,5 @@
+use crate::geometry::Radians;
+
 use super::geometry::{Dim, Matrix, Scalar, Vector};
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,8 +120,11 @@ impl AsMut<Matrix<4, 4>> for TransformBuilder {
 impl TransformBuilder {
     /// Add a rotation about the x axis to the transformation.
     ///
-    pub fn rotate_about_x(&self, rotation: f64) -> TransformBuilder {
-        let (sin, cos) = f64::sin_cos(rotation.to_radians());
+    pub fn rotate_about_x<T>(&self, angle: T) -> TransformBuilder
+    where
+        T: Into<Radians>,
+    {
+        let (sin, cos) = f64::sin_cos(angle.into().0);
         TransformBuilder(
             self.0
                 * Matrix::from([
@@ -133,8 +138,11 @@ impl TransformBuilder {
 
     /// Add a rotation about the y axis to the transformation.
     ///
-    pub fn rotate_about_y(&self, rotation: f64) -> TransformBuilder {
-        let (sin, cos) = f64::sin_cos(rotation.to_radians());
+    pub fn rotate_about_y<T>(&self, angle: T) -> TransformBuilder
+    where
+        T: Into<Radians>,
+    {
+        let (sin, cos) = f64::sin_cos(angle.into().0);
         TransformBuilder(
             self.0
                 * Matrix::from([
@@ -148,8 +156,11 @@ impl TransformBuilder {
 
     /// Add a rotation about the Z axis to the transformation.
     ///
-    pub fn rotate_about_z(&self, rotation: f64) -> TransformBuilder {
-        let (sin, cos) = f64::sin_cos(rotation.to_radians());
+    pub fn rotate_about_z<T>(&self, angle: T) -> TransformBuilder
+    where
+        T: Into<Radians>,
+    {
+        let (sin, cos) = f64::sin_cos(angle.into().0);
         TransformBuilder(
             self.0
                 * Matrix::from([

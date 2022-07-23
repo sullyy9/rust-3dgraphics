@@ -17,7 +17,7 @@ use winit::{
 
 use crate::{
     camera::Camera,
-    geometry::{BBox, Dim, Point, Scalar},
+    geometry::{BBox, Degrees, Dim, Point, RotationAxis, Scalar},
     mesh::{Mesh, Pipeline, Renderable, Transform, Visibility},
     rasterizer::EdgeTable,
     window::{Colour, DrawType, GraphicsWindow},
@@ -169,15 +169,18 @@ fn main() -> ! {
                 camera.position[Dim::X] += map_move(controls.move_right, controls.move_left);
                 camera.position[Dim::Y] += map_move(controls.move_up, controls.move_down);
                 camera.position[Dim::Z] += map_move(controls.move_forward, controls.move_backward);
-                camera.orientation.x += map_move(controls.look_up, controls.look_down);
-                camera.orientation.y += map_move(controls.look_left, controls.look_right);
-                camera.orientation.z += map_move(controls.look_cw, controls.look_acw);
+                camera.orientation[RotationAxis::Roll] +=
+                    Degrees(map_move(controls.look_up, controls.look_down));
+                camera.orientation[RotationAxis::Pitch] +=
+                    Degrees(map_move(controls.look_left, controls.look_right));
+                camera.orientation[RotationAxis::Yaw] +=
+                    Degrees(map_move(controls.look_cw, controls.look_acw));
 
                 let world_transform = Transform::builder()
                     .scale(Scalar(10.0))
-                    .rotate_about_x(teapot.orientation.vector().x)
-                    .rotate_about_y(teapot.orientation.vector().y)
-                    .rotate_about_z(teapot.orientation.vector().z)
+                    .rotate_about_x(teapot.orientation[RotationAxis::Roll])
+                    .rotate_about_y(teapot.orientation[RotationAxis::Pitch])
+                    .rotate_about_z(teapot.orientation[RotationAxis::Yaw])
                     .translate(teapot.position.vector_from(&Point::new([0, 0, 0])))
                     .build_affine();
 

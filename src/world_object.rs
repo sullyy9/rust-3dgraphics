@@ -1,5 +1,5 @@
 use crate::{
-    geometry::{Orientation3D, Point},
+    geometry::{Orientation, Point, Degrees},
     mesh::Renderable,
 };
 
@@ -13,7 +13,7 @@ where
 {
     pub mesh: T,
     pub position: Point<3>,
-    pub orientation: Orientation3D,
+    pub orientation: Orientation<Degrees, 3>,
 }
 
 impl<T> WorldObject<T>
@@ -24,7 +24,7 @@ where
         WorldObject {
             mesh,
             position: Point::default(),
-            orientation: Orientation3D::default(),
+            orientation: Orientation::default(),
         }
     }
 }

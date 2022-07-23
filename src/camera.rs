@@ -1,28 +1,27 @@
 use crate::{
-    geometry::{Orientation3D, Point},
+    geometry::{Degrees, Orientation, Point, RotationAxis},
     mesh::Transform,
 };
 
-#[derive(Default)]
 pub struct Camera {
     pub position: Point<3>,
-    pub orientation: Orientation3D,
+    pub orientation: Orientation<Degrees, 3>,
 }
 
 impl Camera {
     pub fn new(position: Point<3>) -> Self {
         Camera {
             position,
-            orientation: Orientation3D::default(),
+            orientation: Orientation::new([Degrees(0.0), Degrees(0.0), Degrees(0.0)]),
         }
     }
 
     pub fn view_transform(&self) -> Transform {
         Transform::builder()
             .translate(self.position.vector_to(&Point::new([0, 0, 0])))
-            .rotate_about_x(-self.orientation.x)
-            .rotate_about_y(-self.orientation.y)
-            .rotate_about_z(-self.orientation.z)
+            .rotate_about_x(-self.orientation[RotationAxis::Roll])
+            .rotate_about_y(-self.orientation[RotationAxis::Pitch])
+            .rotate_about_z(-self.orientation[RotationAxis::Yaw])
             .build_affine()
     }
 }
