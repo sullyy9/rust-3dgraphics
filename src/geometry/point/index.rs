@@ -1,12 +1,15 @@
 //! Implementations of indexing for points.
-//! 
+//!
 
 use std::ops::{Index, IndexMut};
 
-use super::{Point, Dim};
+use super::{Dim, MatrixElement, Point};
 
-impl<const D: usize> Index<Dim> for Point<D> {
-    type Output = f64;
+impl<T, const D: usize> Index<Dim> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    type Output = T;
 
     fn index(&self, index: Dim) -> &Self::Output {
         match index {
@@ -19,7 +22,10 @@ impl<const D: usize> Index<Dim> for Point<D> {
         }
     }
 }
-impl<const D: usize> IndexMut<Dim> for Point<D> {
+impl<T, const D: usize> IndexMut<Dim> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
     fn index_mut(&mut self, index: Dim) -> &mut Self::Output {
         match index {
             Dim::X if D >= 1 => &mut self.0[0][0],

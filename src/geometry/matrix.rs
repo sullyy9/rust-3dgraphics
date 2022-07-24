@@ -11,4 +11,4 @@ mod subtraction;
 pub(self) use super::Scalar;
 
 // External re-exports.
-pub use self::mat::Matrix;
+pub use self::mat::{Matrix, MatrixElement};

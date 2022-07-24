@@ -9,12 +9,12 @@ mod iter;
 mod method;
 
 // Internal re-exports for types required by sub-modules
-pub(self) use super::{Dim, Matrix, Point, Scalar};
+pub(self) use super::{Dim, Matrix, MatrixElement, Point, Scalar};
 
 /// Type representing an N dimensional vector.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Vector<const N: usize>(pub Matrix<1, N>);
+pub struct Vector<T, const N: usize>(pub Matrix<T, 1, N>);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Tests ///////////////////////////////////////////////////////////////////////

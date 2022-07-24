@@ -7,8 +7,8 @@ use super::geometry::{Dim, Matrix, Scalar, Vector};
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, Copy)]
-pub struct Transform(pub(self) Matrix<4, 4>);
-pub struct TransformBuilder(pub(self) Matrix<4, 4>);
+pub struct Transform(pub(self) Matrix<f64, 4, 4>);
+pub struct TransformBuilder(pub(self) Matrix<f64, 4, 4>);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
@@ -80,35 +80,32 @@ impl TransformBuilder {
 // Trait Implementations ///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<T> From<[[T; 4]; 4]> for Transform
-where
-    T: Into<f64>,
-{
-    fn from(array: [[T; 4]; 4]) -> Self {
+impl From<[[f64; 4]; 4]> for Transform {
+    fn from(array: [[f64; 4]; 4]) -> Self {
         Self(Matrix::from(array))
     }
 }
 
-impl AsRef<Matrix<4, 4>> for Transform {
-    fn as_ref(&self) -> &Matrix<4, 4> {
+impl AsRef<Matrix<f64, 4, 4>> for Transform {
+    fn as_ref(&self) -> &Matrix<f64, 4, 4> {
         &self.0
     }
 }
 
-impl AsRef<Matrix<4, 4>> for TransformBuilder {
-    fn as_ref(&self) -> &Matrix<4, 4> {
+impl AsRef<Matrix<f64, 4, 4>> for TransformBuilder {
+    fn as_ref(&self) -> &Matrix<f64, 4, 4> {
         &self.0
     }
 }
 
-impl AsMut<Matrix<4, 4>> for Transform {
-    fn as_mut(&mut self) -> &mut Matrix<4, 4> {
+impl AsMut<Matrix<f64, 4, 4>> for Transform {
+    fn as_mut(&mut self) -> &mut Matrix<f64, 4, 4> {
         &mut self.0
     }
 }
 
-impl AsMut<Matrix<4, 4>> for TransformBuilder {
-    fn as_mut(&mut self) -> &mut Matrix<4, 4> {
+impl AsMut<Matrix<f64, 4, 4>> for TransformBuilder {
+    fn as_mut(&mut self) -> &mut Matrix<f64, 4, 4> {
         &mut self.0
     }
 }
@@ -174,7 +171,7 @@ impl TransformBuilder {
 
     /// Add a translation to a transformation.
     ///
-    pub fn translate(&self, vector: Vector<3>) -> TransformBuilder {
+    pub fn translate(&self, vector: Vector<f64, 3>) -> TransformBuilder {
         let (t_x, t_y, t_z) = (vector[Dim::X], vector[Dim::Y], vector[Dim::Z]);
         TransformBuilder(
             self.0
@@ -235,7 +232,7 @@ impl TransformBuilder {
     /// Add scaling to each axis to a transformation.
     ///
     #[allow(dead_code)]
-    pub fn scale(&self, s: Scalar) -> TransformBuilder {
+    pub fn scale(&self, s: Scalar<f64>) -> TransformBuilder {
         TransformBuilder(
             self.0
                 * Matrix::from([
@@ -250,7 +247,7 @@ impl TransformBuilder {
     /// Add X axis scaling to a transformation.
     ///
     #[allow(dead_code)]
-    pub fn scale_x(&self, s: Scalar) -> TransformBuilder {
+    pub fn scale_x(&self, s: Scalar<f64>) -> TransformBuilder {
         TransformBuilder(
             self.0
                 * Matrix::from([
@@ -265,7 +262,7 @@ impl TransformBuilder {
     /// Add Y axis scaling to a transformation.
     ///
     #[allow(dead_code)]
-    pub fn scale_y(&self, s: Scalar) -> TransformBuilder {
+    pub fn scale_y(&self, s: Scalar<f64>) -> TransformBuilder {
         TransformBuilder(
             self.0
                 * Matrix::from([
@@ -280,7 +277,7 @@ impl TransformBuilder {
     /// Add Z axis scaling to a transformation.
     ///
     #[allow(dead_code)]
-    pub fn scale_z(&self, s: Scalar) -> TransformBuilder {
+    pub fn scale_z(&self, s: Scalar<f64>) -> TransformBuilder {
         TransformBuilder(
             self.0
                 * Matrix::from([

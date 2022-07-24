@@ -4,9 +4,9 @@
 use super::{PipeMesh, Point, Polygon, VIndex, Vector, Visibility};
 
 pub struct Iter<'a> {
-    vertex: &'a [Point<4>],
+    vertex: &'a [Point<f64, 4>],
     vindex: &'a [VIndex],
-    normal: Option<&'a [Vector<3>]>,
+    normal: Option<&'a [Vector<f64, 3>]>,
     visible: Option<&'a [Visibility]>,
 }
 

@@ -12,7 +12,7 @@ where
     T: Renderable,
 {
     pub mesh: T,
-    pub position: Point<3>,
+    pub position: Point<f64, 3>,
     pub orientation: Orientation<Degrees, 3>,
 }
 

@@ -9,16 +9,18 @@ mod iter;
 mod method;
 
 // Internal re-exports for types required by sub-modules
-pub(self) use super::{Dim, Matrix, Scalar, Vector};
+pub(self) use super::{Dim, Matrix, MatrixElement, Scalar, Vector};
 
 /// Type representing an N dimensional point.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Point<const N: usize>(Matrix<1, N>);
+pub struct Point<T, const N: usize>(Matrix<T, 1, N>)
+where
+    T: MatrixElement<T>;
 
-////////////////////////////////////////////////////////////////////////////////
-// Tests ///////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Tests //////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {
@@ -38,7 +40,12 @@ mod tests {
     #[test]
     fn test_matrix_mul() {
         let mut point = Point::new([1.0, 2.0, 3.0, -4.0]);
-        let matrix = Matrix::from([[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2]]);
+        let matrix = Matrix::from([
+            [2.0, 0.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0, 0.0],
+            [0.0, 0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0, 2.0],
+        ]);
 
         assert_eq!(point * matrix, Point::new([2.0, 4.0, 6.0, -8.0]));
 

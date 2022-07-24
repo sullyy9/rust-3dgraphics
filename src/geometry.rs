@@ -17,7 +17,7 @@ pub use self::{
     angle::{Angle, Degrees, Radians},
     bounding_box::{BBox, Bounding},
     dimension::Dim,
-    matrix::Matrix,
+    matrix::{Matrix, MatrixElement},
     orientation::{Orientation, RotationAxis},
     point::Point,
     scalar::Scalar,

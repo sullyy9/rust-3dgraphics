@@ -5,7 +5,7 @@ pub trait Pipeline {
     fn update_normals(self) -> Self;
     fn update_visibility<B>(self, bounder: &B) -> Self
     where
-        B: Bounding<4>;
+        B: Bounding<f64, 4>;
 }
 
 impl Pipeline for PipeMesh {
@@ -18,7 +18,7 @@ impl Pipeline for PipeMesh {
     }
 
     fn update_normals(mut self) -> Self {
-        let normals: Vec<Vector<3>> = self
+        let normals: Vec<Vector<f64, 3>> = self
             .vindex
             .iter()
             .map(|i| {
@@ -34,7 +34,7 @@ impl Pipeline for PipeMesh {
 
     fn update_visibility<B>(mut self, bounder: &B) -> Self
     where
-        B: Bounding<4>,
+        B: Bounding<f64, 4>,
     {
         let visible = self
             .vindex

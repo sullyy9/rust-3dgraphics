@@ -31,14 +31,14 @@ struct VIndex(pub(self) [usize; 3]);
 
 /// Face-vertex mesh type.
 pub struct Mesh {
-    vertex: Box<[Point<3>]>,
+    vertex: Box<[Point<f64, 3>]>,
     vindex: Box<[VIndex]>,
 }
 
 pub struct PipeMesh {
-    vertex: Box<[Point<4>]>,
+    vertex: Box<[Point<f64, 4>]>,
     vindex: Box<[VIndex]>,
-    normal: Option<Box<[Vector<3>]>>,
+    normal: Option<Box<[Vector<f64, 3>]>>,
     visible: Option<Box<[Visibility]>>,
 }
 

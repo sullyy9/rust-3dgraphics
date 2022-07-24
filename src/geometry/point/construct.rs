@@ -1,32 +1,40 @@
 //! Implementations of construction methods for points.
 //!
 
-use super::{Matrix, Point};
+use super::{Matrix, MatrixElement, Point};
 
-impl<const D: usize> Default for Point<D> {
+impl<T, const D: usize> Default for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
     /// Construct a point at the origin.
     ///
     fn default() -> Self {
-        Self(Matrix::new([[0.0; D]]))
+        Self(Matrix::new([[T::default(); D]]))
     }
 }
 
-impl<const D: usize> Point<D> {
+impl<T, const D: usize> Point<T, D>
+where
+    T: MatrixElement<T>,
+{
     /// Construct a point from an array.
     ///
-    pub fn new<T>(coords: [T; D]) -> Self
+    pub fn new(coords: [T; D]) -> Self
     where
-        T: Into<f64>,
+        T: Into<T>,
     {
-        Self(Matrix::new([coords.map(|coord| coord.into())]))
+        Self(Matrix::new([coords.map(|coord| coord)]))
     }
 }
 
-
-impl<const D: usize> From<Matrix<1, D>> for Point<D> {
+impl<T, const D: usize> From<Matrix<T, 1, D>> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
     /// Construct a point from a 1 row matrix.
     ///
-    fn from(matrix: Matrix<1, D>) -> Self {
+    fn from(matrix: Matrix<T, 1, D>) -> Self {
         Point(matrix)
     }
 }

@@ -3,36 +3,38 @@
 
 use std::ops::{Sub, SubAssign};
 
-use super::Matrix;
+use super::{Matrix, MatrixElement};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Matrix - Matrix /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const R: usize, const C: usize> Sub<T> for Matrix<R, C>
+impl<T, M, const R: usize, const C: usize> Sub<M> for Matrix<T, R, C>
 where
-    T: AsRef<Matrix<R, C>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, C>>,
 {
-    type Output = Matrix<R, C>;
+    type Output = Matrix<T, R, C>;
 
-    fn sub(self, rhs: T) -> Self::Output {
+    fn sub(self, rhs: M) -> Self::Output {
         let mut mat = self;
         mat.iter_mut()
             .zip(rhs.as_ref().iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
+            .for_each(|(lhs, rhs)| lhs.sub_assign(*rhs));
         mat
     }
 }
-impl<T, const R: usize, const C: usize> Sub<T> for &Matrix<R, C> 
+impl<T, M, const R: usize, const C: usize> Sub<M> for &Matrix<T, R, C>
 where
-    T: AsRef<Matrix<R, C>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, C>>,
 {
-    type Output = Matrix<R, C>;
+    type Output = Matrix<T, R, C>;
 
-    fn sub(self, rhs: T) -> Self::Output {
+    fn sub(self, rhs: M) -> Self::Output {
         let mut mat = *self;
         mat.iter_mut()
             .zip(rhs.as_ref().iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
+            .for_each(|(lhs, rhs)| lhs.sub_assign(*rhs));
         mat
     }
 }
@@ -40,23 +42,25 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Matrix -= Matrix ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const R: usize, const C: usize> SubAssign<T> for Matrix<R, C>
+impl<T, M, const R: usize, const C: usize> SubAssign<M> for Matrix<T, R, C>
 where
-    T: AsRef<Matrix<R, C>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, C>>,
 {
-    fn sub_assign(&mut self, rhs: T) {
+    fn sub_assign(&mut self, rhs: M) {
         self.iter_mut()
             .zip(rhs.as_ref().iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
+            .for_each(|(lhs, rhs)| lhs.sub_assign(*rhs));
     }
 }
-impl<T, const R: usize, const C: usize> SubAssign<T> for &mut Matrix<R, C>
+impl<T, M, const R: usize, const C: usize> SubAssign<M> for &mut Matrix<T, R, C>
 where
-    T: AsRef<Matrix<R, C>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, C>>,
 {
-    fn sub_assign(&mut self, rhs: T) {
+    fn sub_assign(&mut self, rhs: M) {
         self.iter_mut()
             .zip(rhs.as_ref().iter())
-            .for_each(|(lhs, rhs)| lhs.sub_assign(rhs));
+            .for_each(|(lhs, rhs)| lhs.sub_assign(*rhs));
     }
 }

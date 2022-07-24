@@ -9,8 +9,8 @@ pub enum Visibility {
 }
 
 pub struct Polygon<'a> {
-    pub vertex: [&'a Point<4>; 3],
-    pub normal: Option<&'a Vector<3>>,
+    pub vertex: [&'a Point<f64, 4>; 3],
+    pub normal: Option<&'a Vector<f64, 3>>,
     pub visible: Option<&'a Visibility>,
 }
 
@@ -19,11 +19,11 @@ impl Polygonal for Polygon<'_> {
         3
     }
 
-    fn verticies(&self) -> &[&Point<4>] {
+    fn verticies(&self) -> &[&Point<f64, 4>] {
         &self.vertex[..]
     }
 
-    fn normal(&self) -> Vector<3> {
+    fn normal(&self) -> Vector<f64, 3> {
         todo!()
     }
 }

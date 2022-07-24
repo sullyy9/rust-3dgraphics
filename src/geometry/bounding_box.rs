@@ -1,7 +1,7 @@
 //! Implementation of a bounding box type.
 //!
 
-use super::Point;
+use super::{MatrixElement, Point};
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Types & Traits //////////////////////////////////////////////////////////////
@@ -10,22 +10,33 @@ use super::Point;
 /// Type represneting a N dimensional bounding box.
 ///
 #[derive(Debug, Clone)]
-pub struct BBox<const D: usize>([(f64, f64); D]);
+pub struct BBox<T, const D: usize>([(T, T); D])
+where
+    T: MatrixElement<T>;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const D: usize> Default for BBox<D> {
+impl<T, const D: usize> Default for BBox<T, D>
+where
+    T: MatrixElement<T>,
+{
     fn default() -> Self {
-        Self([(0.0, 0.0); D])
+        Self([(T::default(), T::default()); D])
     }
 }
 
-impl<const D: usize> BBox<D> {
+impl<T, const D: usize> BBox<T, D>
+where
+    T: MatrixElement<T>,
+{
     /// Return a new BoundingBox given 2 points at oposite corners.
     ///
-    pub fn new(p1: Point<D>, p2: Point<D>) -> BBox<D> {
+    pub fn new(p1: Point<T, D>, p2: Point<T, D>) -> BBox<T, D>
+    where
+        T: MatrixElement<T>,
+    {
         let mut bbox = BBox::default();
 
         bbox.0
@@ -45,14 +56,22 @@ impl<const D: usize> BBox<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Method Implementations //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-pub trait Bounding<const D: usize> {
-    fn bounds(&self, point: &Point<D>) -> bool;
+pub trait Bounding<T, const D: usize> {
+    fn bounds(&self, point: &Point<T, D>) -> bool
+    where
+        T: MatrixElement<T>;
 }
 
-impl<const D: usize> Bounding<D> for BBox<D> {
+impl<T, const D: usize> Bounding<T, D> for BBox<T, D>
+where
+    T: MatrixElement<T>,
+{
     /// Return true if a point lies within a bounding box. Return else otherwise
     ///
-    fn bounds(&self, point: &Point<D>) -> bool {
+    fn bounds(&self, point: &Point<T, D>) -> bool
+    where
+        T: MatrixElement<T>,
+    {
         point
             .into_iter()
             .zip(self.0.iter())
@@ -72,7 +91,7 @@ mod tests {
     fn test_bounding_box() {
         let bbox = BBox::new(
             Point::new([0.44, 50.28, -88.62, -0.24]),
-            Point::new([60, 100, -20, 0]),
+            Point::new([60.0, 100.0, -20.0, 0.0]),
         );
 
         let point_bound = Point::new([32.6, 50.29, -50.3, -0.1]);

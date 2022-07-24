@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Types & Traits //////////////////////////////////////////////////////////////
@@ -7,39 +7,76 @@ use std::ops::{Index, IndexMut};
 /// Type representing an N dimensional Matrix.
 ///
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Matrix<const R: usize, const C: usize>(pub(self) [[f64; C]; R]);
+pub struct Matrix<T, const R: usize, const C: usize>(pub(self) [[T; C]; R]);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor Implementations /////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const R: usize, const C: usize> Default for Matrix<R, C> {
+impl<T, const R: usize, const C: usize> Default for Matrix<T, R, C>
+where
+    T: MatrixElement<T>,
+{
     /// Construct a matrix where each element is set to 0.
     ///
     fn default() -> Self {
-        Self([[0.0; C]; R])
+        Self([[T::default(); C]; R])
     }
 }
 
-impl<const R: usize, const C: usize> Matrix<R, C> {
-    pub fn new(data: [[f64; C]; R]) -> Self {
+impl<T, const R: usize, const C: usize> Matrix<T, R, C> {
+    pub fn new(data: [[T; C]; R]) -> Self {
         Self(data)
     }
 }
+
+pub trait MatrixElement<T>:
+    Sized
+    + Default
+    + Copy
+    + Add<T, Output = T>
+    + AddAssign
+    + Sub<T, Output = T>
+    + SubAssign
+    + Mul<T, Output = T>
+    + MulAssign
+    + Div<T, Output = T>
+    + DivAssign
+    + PartialOrd
+    + PartialEq
+{
+}
+impl MatrixElement<i8> for i8 {}
+impl MatrixElement<i16> for i16 {}
+impl MatrixElement<i32> for i32 {}
+impl MatrixElement<i64> for i64 {}
+impl MatrixElement<i128> for i128 {}
+impl MatrixElement<isize> for isize {}
+impl MatrixElement<u8> for u8 {}
+impl MatrixElement<u16> for u16 {}
+impl MatrixElement<u32> for u32 {}
+impl MatrixElement<u64> for u64 {}
+impl MatrixElement<u128> for u128 {}
+impl MatrixElement<usize> for usize {}
+impl MatrixElement<f32> for f32 {}
+impl MatrixElement<f64> for f64 {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Method Implementations //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const R: usize, const C: usize> Matrix<R, C> {
+impl<T, const R: usize, const C: usize> Matrix<T, R, C>
+where
+    T: MatrixElement<T>,
+{
     /// Return a new matrix where each element has been modified acording to the closure f.
     ///
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
     ///
-    pub fn map<F>(&self, f: F) -> Matrix<R, C>
+    pub fn map<F>(&self, f: F) -> Matrix<T, R, C>
     where
-        F: Fn(f64) -> f64,
+        F: Fn(T) -> T,
     {
         Matrix(self.0.map(|row| row.map(&f)))
     }
@@ -51,20 +88,20 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
     ///
     pub fn for_each<F>(&mut self, f: F)
     where
-        F: Fn(&mut f64),
+        F: Fn(&mut T),
     {
         self.iter_mut().for_each(&f);
     }
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [f64; C]>> {
+    pub fn iter(&self) -> std::iter::Flatten<std::slice::Iter<'_, [T; C]>> {
         self.0.iter().flatten()
     }
 
     /// Iterate over each element starting 0,0 then 0,1, 0,2, etc.
     ///
-    pub fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [f64; C]>> {
+    pub fn iter_mut(&mut self) -> std::iter::Flatten<std::slice::IterMut<'_, [T; C]>> {
         self.0.iter_mut().flatten()
     }
 }
@@ -73,32 +110,29 @@ impl<const R: usize, const C: usize> Matrix<R, C> {
 // Trait Implementations ///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const R: usize, const C: usize> IntoIterator for Matrix<R, C> {
-    type Item = f64;
-    type IntoIter = std::iter::Flatten<std::array::IntoIter<[f64; C], R>>;
+impl<T, const R: usize, const C: usize> IntoIterator for Matrix<T, R, C> {
+    type Item = T;
+    type IntoIter = std::iter::Flatten<std::array::IntoIter<[T; C], R>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter().flatten()
     }
 }
 
-impl<const R: usize, const C: usize> AsRef<Matrix<R, C>> for Matrix<R, C> {
-    fn as_ref(&self) -> &Matrix<R, C> {
+impl<T, const R: usize, const C: usize> AsRef<Matrix<T, R, C>> for Matrix<T, R, C> {
+    fn as_ref(&self) -> &Matrix<T, R, C> {
         self
     }
 }
-impl<const R: usize, const C: usize> AsMut<Matrix<R, C>> for Matrix<R, C> {
-    fn as_mut(&mut self) -> &mut Matrix<R, C> {
+impl<T, const R: usize, const C: usize> AsMut<Matrix<T, R, C>> for Matrix<T, R, C> {
+    fn as_mut(&mut self) -> &mut Matrix<T, R, C> {
         self
     }
 }
 
-impl<T, const R: usize, const C: usize> From<[[T; C]; R]> for Matrix<R, C>
-where
-    T: Into<f64>,
-{
+impl<T, const R: usize, const C: usize> From<[[T; C]; R]> for Matrix<T, R, C> {
     fn from(array: [[T; C]; R]) -> Self {
-        Matrix(array.map(|row| row.map(|i| i.into())))
+        Matrix(array.map(|row| row.map(|i| i)))
     }
 }
 
@@ -106,15 +140,15 @@ where
 // Operator Overloads //////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-impl<const R: usize, const C: usize> Index<usize> for Matrix<R, C> {
-    type Output = [f64; C];
+impl<T, const R: usize, const C: usize> Index<usize> for Matrix<T, R, C> {
+    type Output = [T; C];
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl<const R: usize, const C: usize> IndexMut<usize> for Matrix<R, C> {
+impl<T, const R: usize, const C: usize> IndexMut<usize> for Matrix<T, R, C> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }

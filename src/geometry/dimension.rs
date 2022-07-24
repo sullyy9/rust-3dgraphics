@@ -8,6 +8,7 @@
 /// Type that represents axis in a N dimensional coordinate system, with the first 4 specifically
 /// named.
 /// 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Dim {
     X,
     Y,

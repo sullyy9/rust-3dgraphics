@@ -49,9 +49,9 @@ fn main() -> ! {
 
     //let cube = Mesh::new_cube(100.0);
     let mut teapot = WorldObject::new(Mesh::new(Path::new("./resources/teapot.obj")));
-    teapot.position = Point::new([0, 0, 400]);
+    teapot.position = Point::new([0.0, 0.0, 400.0]);
 
-    let mut camera = Camera::new(Point::new([0, 0, 0]));
+    let mut camera = Camera::new(Point::new([0.0, 0.0, 0.0]));
     let mut controls = CameraControls::default();
 
     // Set controls for pausing and manually advancing each frame.
@@ -186,19 +186,19 @@ fn main() -> ! {
                     .rotate_about_x(teapot.orientation[RotationAxis::Roll])
                     .rotate_about_y(teapot.orientation[RotationAxis::Pitch])
                     .rotate_about_z(teapot.orientation[RotationAxis::Yaw])
-                    .translate(teapot.position.vector_from(&Point::new([0, 0, 0])))
+                    .translate(teapot.position.vector_from(&Point::new([0.0, 0.0, 0.0])))
                     .build_affine();
 
                 let screen_transform = Transform::builder()
                     .translate_x(1.0)
                     .translate_y(1.0)
-                    .scale_x(Scalar::from(window.width / 2))
-                    .scale_y(Scalar::from(window.height / 2))
-                    .scale_z(Scalar::from(-1000))
+                    .scale_x(Scalar::from(window.width as f64 / 2.0))
+                    .scale_y(Scalar::from(window.height as f64 / 2.0))
+                    .scale_z(Scalar::from(-1000.0))
                     .translate_z(1000.0)
                     .build_affine();
 
-                let ndc_bounds = BBox::new(Point::new([-1, -1, -1, -1]), Point::new([1, 1, 1, 1]));
+                let ndc_bounds = BBox::new(Point::new([-1.0, -1.0, -1.0, -1.0]), Point::new([1.0, 1.0, 1.0, 1.0]));
 
                 let screen_mesh = teapot
                     .mesh

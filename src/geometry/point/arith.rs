@@ -3,26 +3,28 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
 
-use super::{Matrix, Point, Scalar, Vector};
+use super::{Matrix, MatrixElement, Point, Scalar, Vector};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Point + Vector = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const N: usize> Add<T> for Point<N>
+impl<T, V, const N: usize> Add<V> for Point<T, N>
 where
-    T: AsRef<Vector<N>>,
+    T: MatrixElement<T>,
+    V: AsRef<Vector<T, N>>,
 {
-    type Output = Point<N>;
-    fn add(self, rhs: T) -> Self::Output {
+    type Output = Point<T, N>;
+    fn add(self, rhs: V) -> Self::Output {
         Point(self.0.add(&rhs.as_ref().0))
     }
 }
-impl<T, const N: usize> Add<T> for &Point<N>
+impl<T, V, const N: usize> Add<V> for &Point<T, N>
 where
-    T: AsRef<Vector<N>>,
+    T: MatrixElement<T>,
+    V: AsRef<Vector<T, N>>,
 {
-    type Output = Point<N>;
-    fn add(self, rhs: T) -> Self::Output {
+    type Output = Point<T, N>;
+    fn add(self, rhs: V) -> Self::Output {
         Point(self.0.add(&rhs.as_ref().0))
     }
 }
@@ -30,19 +32,21 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point += Vector /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const N: usize> AddAssign<T> for Point<N>
+impl<T, V, const N: usize> AddAssign<V> for Point<T, N>
 where
-    T: AsRef<Vector<N>>,
+    T: MatrixElement<T>,
+    V: AsRef<Vector<T, N>>,
 {
-    fn add_assign(&mut self, rhs: T) {
+    fn add_assign(&mut self, rhs: V) {
         self.0.add_assign(&rhs.as_ref().0);
     }
 }
-impl<T, const N: usize> AddAssign<T> for &mut Point<N>
+impl<T, V, const N: usize> AddAssign<V> for &mut Point<T, N>
 where
-    T: AsRef<Vector<N>>,
+    T: MatrixElement<T>,
+    V: AsRef<Vector<T, N>>,
 {
-    fn add_assign(&mut self, rhs: T) {
+    fn add_assign(&mut self, rhs: V) {
         self.0.add_assign(&rhs.as_ref().0);
     }
 }
@@ -50,21 +54,23 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point - Point = Vector //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const N: usize> Sub<T> for Point<N>
+impl<T, P, const N: usize> Sub<P> for Point<T, N>
 where
-    T: AsRef<Point<N>>,
+    T: MatrixElement<T>,
+    P: AsRef<Point<T, N>>,
 {
-    type Output = Vector<N>;
-    fn sub(self, rhs: T) -> Self::Output {
+    type Output = Vector<T, N>;
+    fn sub(self, rhs: P) -> Self::Output {
         Vector(self.0.sub(&rhs.as_ref().0))
     }
 }
-impl<T, const N: usize> Sub<T> for &Point<N>
+impl<T, P, const N: usize> Sub<P> for &Point<T, N>
 where
-    T: AsRef<Point<N>>,
+    T: MatrixElement<T>,
+    P: AsRef<Point<T, N>>,
 {
-    type Output = Vector<N>;
-    fn sub(self, rhs: T) -> Self::Output {
+    type Output = Vector<T, N>;
+    fn sub(self, rhs: P) -> Self::Output {
         Vector(self.0.sub(&rhs.as_ref().0))
     }
 }
@@ -72,15 +78,21 @@ where
 ////////////////////////////////////////////////////////////////////////////////
 // Point * Scaler = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<const D: usize> Mul<Scalar> for Point<D> {
-    type Output = Point<D>;
-    fn mul(self, rhs: Scalar) -> Self::Output {
+impl<T, const D: usize> Mul<Scalar<T>> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, D>;
+    fn mul(self, rhs: Scalar<T>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
-impl<const D: usize> Mul<Scalar> for &Point<D> {
-    type Output = Point<D>;
-    fn mul(self, rhs: Scalar) -> Self::Output {
+impl<T, const D: usize> Mul<Scalar<T>> for &Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, D>;
+    fn mul(self, rhs: Scalar<T>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
@@ -88,13 +100,19 @@ impl<const D: usize> Mul<Scalar> for &Point<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Point *= Scaler /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<const D: usize> MulAssign<Scalar> for Point<D> {
-    fn mul_assign(&mut self, rhs: Scalar) {
+impl<T, const D: usize> MulAssign<Scalar<T>> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    fn mul_assign(&mut self, rhs: Scalar<T>) {
         self.0.mul_assign(rhs);
     }
 }
-impl<const D: usize> MulAssign<Scalar> for &mut Point<D> {
-    fn mul_assign(&mut self, rhs: Scalar) {
+impl<T, const D: usize> MulAssign<Scalar<T>> for &mut Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    fn mul_assign(&mut self, rhs: Scalar<T>) {
         self.0.mul_assign(rhs);
     }
 }
@@ -102,15 +120,21 @@ impl<const D: usize> MulAssign<Scalar> for &mut Point<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Point / Scaler = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<const D: usize> Div<Scalar> for Point<D> {
-    type Output = Point<D>;
-    fn div(self, rhs: Scalar) -> Self::Output {
+impl<T, const D: usize> Div<Scalar<T>> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, D>;
+    fn div(self, rhs: Scalar<T>) -> Self::Output {
         Point(self.0.div(rhs))
     }
 }
-impl<const D: usize> Div<Scalar> for &Point<D> {
-    type Output = Point<D>;
-    fn div(self, rhs: Scalar) -> Self::Output {
+impl<T, const D: usize> Div<Scalar<T>> for &Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, D>;
+    fn div(self, rhs: Scalar<T>) -> Self::Output {
         Point(self.0.div(rhs))
     }
 }
@@ -118,13 +142,19 @@ impl<const D: usize> Div<Scalar> for &Point<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Point /= Scaler /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<const D: usize> DivAssign<Scalar> for Point<D> {
-    fn div_assign(&mut self, rhs: Scalar) {
+impl<T, const D: usize> DivAssign<Scalar<T>> for Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    fn div_assign(&mut self, rhs: Scalar<T>) {
         self.0.div_assign(rhs);
     }
 }
-impl<const D: usize> DivAssign<Scalar> for &mut Point<D> {
-    fn div_assign(&mut self, rhs: Scalar) {
+impl<T, const D: usize> DivAssign<Scalar<T>> for &mut Point<T, D>
+where
+    T: MatrixElement<T>,
+{
+    fn div_assign(&mut self, rhs: Scalar<T>) {
         self.0.div_assign(rhs);
     }
 }
@@ -132,27 +162,39 @@ impl<const D: usize> DivAssign<Scalar> for &mut Point<D> {
 ////////////////////////////////////////////////////////////////////////////////
 // Point * Matrix = Point //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for Point<R> {
-    type Output = Point<C>;
-    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+impl<T, const R: usize, const C: usize> Mul<Matrix<T, R, C>> for Point<T, R>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, C>;
+    fn mul(self, rhs: Matrix<T, R, C>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
-impl<const R: usize, const C: usize> Mul<Matrix<R, C>> for &Point<R> {
-    type Output = Point<C>;
-    fn mul(self, rhs: Matrix<R, C>) -> Self::Output {
+impl<T, const R: usize, const C: usize> Mul<Matrix<T, R, C>> for &Point<T, R>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, C>;
+    fn mul(self, rhs: Matrix<T, R, C>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
-impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for Point<R> {
-    type Output = Point<C>;
-    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+impl<T, const R: usize, const C: usize> Mul<&Matrix<T, R, C>> for Point<T, R>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, C>;
+    fn mul(self, rhs: &Matrix<T, R, C>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
-impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for &Point<R> {
-    type Output = Point<C>;
-    fn mul(self, rhs: &Matrix<R, C>) -> Self::Output {
+impl<T, const R: usize, const C: usize> Mul<&Matrix<T, R, C>> for &Point<T, R>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Point<T, C>;
+    fn mul(self, rhs: &Matrix<T, R, C>) -> Self::Output {
         Point(self.0.mul(rhs))
     }
 }
@@ -160,20 +202,22 @@ impl<const R: usize, const C: usize> Mul<&Matrix<R, C>> for &Point<R> {
 ////////////////////////////////////////////////////////////////////////////////
 // Point *= Matrix /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-impl<T, const R: usize> MulAssign<T> for Point<R>
+impl<T, M, const R: usize> MulAssign<M> for Point<T, R>
 where
-    T: AsRef<Matrix<R, R>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, R>>,
 {
-    fn mul_assign(&mut self, rhs: T) {
+    fn mul_assign(&mut self, rhs: M) {
         let rhs = rhs.as_ref();
         self.0.mul_assign(rhs);
     }
 }
-impl<T, const R: usize> MulAssign<T> for &mut Point<R>
+impl<T, M, const R: usize> MulAssign<M> for &mut Point<T, R>
 where
-    T: AsRef<Matrix<R, R>>,
+    T: MatrixElement<T>,
+    M: AsRef<Matrix<T, R, R>>,
 {
-    fn mul_assign(&mut self, rhs: T) {
+    fn mul_assign(&mut self, rhs: M) {
         let rhs = rhs.as_ref();
         self.0.mul_assign(rhs);
     }

@@ -3,26 +3,35 @@
 
 use std::ops::{Div, DivAssign};
 
-use super::{Matrix, Scalar};
+use super::{Matrix, Scalar, MatrixElement};
 
 /// Matrix / Scaler multiplication.
-/// 
-impl<const R: usize, const C: usize> Div<Scalar> for Matrix<R, C> {
-    type Output = Matrix<R, C>;
+///
+impl<T, const R: usize, const C: usize> Div<Scalar<T>> for Matrix<T, R, C>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Matrix<T, R, C>;
 
-    fn div(self, rhs: Scalar) -> Self::Output {
+    fn div(self, rhs: Scalar<T>) -> Self::Output {
         self.map(|lhs| lhs.div(rhs.0))
     }
 }
-impl<const R: usize, const C: usize> Div<Scalar> for &Matrix<R, C> {
-    type Output = Matrix<R, C>;
+impl<T, const R: usize, const C: usize> Div<Scalar<T>> for &Matrix<T, R, C>
+where
+    T: MatrixElement<T>,
+{
+    type Output = Matrix<T, R, C>;
 
-    fn div(self, rhs: Scalar) -> Self::Output {
+    fn div(self, rhs: Scalar<T>) -> Self::Output {
         self.map(|lhs| lhs.div(rhs.0))
     }
 }
-impl<const R: usize, const C: usize> DivAssign<Scalar> for Matrix<R, C> {
-    fn div_assign(&mut self, rhs: Scalar) {
+impl<T, const R: usize, const C: usize> DivAssign<Scalar<T>> for Matrix<T, R, C>
+where
+    T: MatrixElement<T>,
+{
+    fn div_assign(&mut self, rhs: Scalar<T>) {
         self.for_each(|lhs| lhs.div_assign(rhs.0));
     }
 }
