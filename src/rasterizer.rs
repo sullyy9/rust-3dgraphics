@@ -1,4 +1,4 @@
-use std::mem::swap;
+use std::{mem::swap, ops::RangeInclusive};
 
 use crate::{
     geometry::{Dim, Point, Vector},
@@ -19,8 +19,8 @@ pub enum Error {
 ///
 #[derive(Clone)]
 pub struct XZPair {
-    pub x: i32,
-    pub z: i32,
+    pub x: isize,
+    pub z: isize,
 }
 
 ///
@@ -67,10 +67,10 @@ impl EdgeList {
 ///
 pub struct EdgeTable {
     table: Vec<EdgeList>,
-    pub ymin: i32,
-    pub ymax: i32,
+    pub ymin: isize,
+    pub ymax: isize,
 
-    pub normal: Vector<3>,
+    pub normal: Vector<f64, 3>,
 }
 // Constructor function and helpers
 impl EdgeTable {
@@ -92,108 +92,6 @@ impl EdgeTable {
 
         (min, max)
     }
-
-    ///
-    /// Draw a line into an edge table using brezenham's algorithm
-    ///
-    fn draw_line(p1: &Point<4>, p2: &Point<4>, table: &mut [EdgeList], yoffset: i32) {
-        let (x1, y1, z1) = (p1[Dim::X] as i32, p1[Dim::Y] as i32, p1[Dim::Z] as i32);
-        let (x2, y2, z2) = (p2[Dim::X] as i32, p2[Dim::Y] as i32, p2[Dim::Z] as i32);
-
-        let dx = (x2 - x1).abs();
-        let dy = (y2 - y1).abs();
-        let dz = (z2 - z1).abs();
-
-        let xs = if x1 < x2 { 1 } else { -1 };
-        let ys = if y1 < y2 { 1 } else { -1 };
-        let zs = if z1 < z2 { 1 } else { -1 };
-
-        if dx >= dy && dx >= dz {
-            // X is the driving axis
-            let mut ygain = (2 * dy) - dx;
-            let mut zgain = (2 * dz) - dx;
-            let mut y = y1;
-            let mut z = z1;
-
-            let xrange: Box<dyn Iterator<Item = _>> = if x1 < x2 {
-                Box::new(x1..=x2)
-            } else {
-                Box::new((x2..=x1).rev())
-            };
-
-            for x in xrange {
-                table[(y - yoffset) as usize].push(XZPair { x, z });
-
-                if ygain > 0 {
-                    y += ys;
-                    ygain -= 2 * dx;
-                }
-                if zgain > 0 {
-                    z += zs;
-                    zgain -= 2 * dx;
-                }
-
-                ygain += 2 * dy;
-                zgain += 2 * dz;
-            }
-        } else if dy >= dx && dy >= dz {
-            // Y is the driving axis
-            let mut xgain = (2 * dx) - dy;
-            let mut zgain = (2 * dz) - dy;
-            let mut x = x1;
-            let mut z = z1;
-
-            let yrange: Box<dyn Iterator<Item = _>> = if y1 < y2 {
-                Box::new(y1..=y2)
-            } else {
-                Box::new((y2..=y1).rev())
-            };
-
-            for y in yrange {
-                table[(y - yoffset) as usize].push(XZPair { x, z });
-
-                if xgain > 0 {
-                    x += xs;
-                    xgain -= 2 * dy;
-                }
-                if zgain > 0 {
-                    z += zs;
-                    zgain -= 2 * dy;
-                }
-
-                xgain += 2 * dx;
-                zgain += 2 * dz;
-            }
-        } else {
-            // Z is the driving axis
-            let mut xgain = (2 * dx) - dz;
-            let mut ygain = (2 * dy) - dz;
-            let mut x = x1;
-            let mut y = y1;
-
-            let zrange: Box<dyn Iterator<Item = _>> = if z1 < z2 {
-                Box::new(z1..=z2)
-            } else {
-                Box::new((z2..=z1).rev())
-            };
-
-            for z in zrange {
-                table[(y - yoffset) as usize].push(XZPair { x, z });
-
-                if xgain > 0 {
-                    x += xs;
-                    xgain -= 2 * dz;
-                }
-                if ygain > 0 {
-                    y += ys;
-                    ygain -= 2 * dz;
-                }
-
-                xgain += 2 * dx;
-                ygain += 2 * dy;
-            }
-        }
-    }
 }
 impl EdgeTable {
     ///
@@ -211,7 +109,7 @@ impl EdgeTable {
     }
 }
 
-impl<'a, T> From<T> for EdgeTable
+impl<T> From<T> for EdgeTable
 where
     T: Polygonal,
 {
@@ -231,7 +129,7 @@ where
         // Add enough elements to the table to encompass the polygon in the Y axis
         let (ymin, ymax) = {
             let (min, max) = EdgeTable::min_max(vert[0][Dim::Y], vert[1][Dim::Y], vert[2][Dim::Y]);
-            (min as i32, max as i32)
+            (min.round() as isize, max.round() as isize)
         };
         let mut table = vec![EdgeList::new(); ((ymax - ymin) + 1) as usize];
 
@@ -259,15 +157,126 @@ where
             swap(&mut line1, &mut line3);
         }
 
-        EdgeTable::draw_line(line1.0, line1.1, &mut table, ymin as i32);
-        EdgeTable::draw_line(line2.0, line2.1, &mut table, ymin as i32);
-        EdgeTable::draw_line(line3.0, line3.1, &mut table, ymin as i32);
+        LineIter::new(line1.0, line1.1).for_each(|point| {
+            table[(point[Dim::Y] - ymin) as usize].push(XZPair {
+                x: point[Dim::X],
+                z: point[Dim::Z],
+            });
+        });
+        LineIter::new(line2.0, line2.1).for_each(|point| {
+            table[(point[Dim::Y] - ymin) as usize].push(XZPair {
+                x: point[Dim::X],
+                z: point[Dim::Z],
+            });
+        });
+        LineIter::new(line3.0, line3.1).for_each(|point| {
+            table[(point[Dim::Y] - ymin) as usize].push(XZPair {
+                x: point[Dim::X],
+                z: point[Dim::Z],
+            });
+        });
 
         EdgeTable {
             table,
             ymin,
             ymax,
             normal: Vector::default(),
+        }
+    }
+}
+
+pub struct LineIter {
+    axes: [Dim; 3], // Ordered with the driving axis first.
+    driving_range: RangeInclusive<isize>,
+    axis_gain: [isize; 3],
+    axis_delta: [isize; 3],
+    axis_step: [isize; 3],
+    this_point: Point<isize, 3>,
+    next_point: Point<isize, 3>,
+}
+
+impl LineIter {
+    pub fn new(p1: &Point<f64, 4>, p2: &Point<f64, 4>) -> LineIter {
+        use Dim::{X, Y, Z};
+
+        let mut p1 = Point::new([
+            p1[Dim::X].round() as isize,
+            p1[Dim::Y].round() as isize,
+            p1[Dim::Z].round() as isize,
+        ]);
+        let mut p2 = Point::new([
+            p2[Dim::X].round() as isize,
+            p2[Dim::Y].round() as isize,
+            p2[Dim::Z].round() as isize,
+        ]);
+
+        let dx = p1[X].abs_diff(p2[X]);
+        let dy = p1[Y].abs_diff(p2[Y]);
+        let dz = p1[Z].abs_diff(p2[Z]);
+
+        let axes = if dx >= dy && dx >= dz {
+            [Dim::X, Dim::Y, Dim::Z]
+        } else if dy >= dx && dy >= dz {
+            [Dim::Y, Dim::X, Dim::Z]
+        } else {
+            [Dim::Z, Dim::X, Dim::Y]
+        };
+
+        // Order the points so that as we travel along the line, we're moving in a positive
+        // direction on the driving axis.
+        if p1[axes[0]] > p2[axes[0]] {
+            std::mem::swap(&mut p1, &mut p2);
+        }
+
+        let driving_range = p1[axes[0]]..=p2[axes[0]];
+        let axis_step = [
+            1,
+            if p1[axes[1]] <= p2[axes[1]] { 1 } else { -1 },
+            if p1[axes[2]] <= p2[axes[2]] { 1 } else { -1 },
+        ];
+
+        let axis_delta = [
+            p1[axes[0]].abs_diff(p2[axes[0]]) as isize,
+            p1[axes[1]].abs_diff(p2[axes[1]]) as isize,
+            p1[axes[2]].abs_diff(p2[axes[2]]) as isize,
+        ];
+        let axis_gain = [
+            0,
+            (axis_delta[1] * 2) - axis_delta[0],
+            (axis_delta[2] * 2) - axis_delta[0],
+        ];
+
+        LineIter {
+            axes,
+            driving_range,
+            axis_gain,
+            axis_delta,
+            axis_step,
+            this_point: Point::default(),
+            next_point: p1,
+        }
+    }
+}
+
+impl Iterator for LineIter {
+    type Item = Point<isize, 3>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(value) = self.driving_range.next() {
+            self.this_point = self.next_point;
+            self.next_point[self.axes[0]] = value;
+
+            self.axes.iter().enumerate().skip(1).for_each(|(i, &dim)| {
+                if self.axis_gain[i] > 0 {
+                    self.next_point[dim] += self.axis_step[i];
+                    self.axis_gain[i] -= self.axis_delta[0] * 2;
+                }
+                self.axis_gain[i] += self.axis_delta[i] * 2;
+            });
+
+            Some(self.this_point)
+        } else {
+            None
         }
     }
 }

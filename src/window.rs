@@ -68,7 +68,7 @@ impl GraphicsWindow {
         let zbuffer = vec![vec![0.0; (width + 1) as usize]; (height + 1) as usize];
 
         // Create the transformation matrix to project camera space onto NDC space
-        let near_plane = 100.0;
+        let near_plane = 10.0;
         let far_plane = 1000.0;
         let fov = 45.0;
 
@@ -147,19 +147,19 @@ impl GraphicsWindow {
             } else {
                 (0, edge_table.ymin)
             };
-            let last = if edge_table.ymax > self.height as i32 {
-                (self.height as i32 - edge_table.ymin) as usize
+            let last = if edge_table.ymax > self.height as isize {
+                (self.height as isize - edge_table.ymin) as usize
             } else {
                 (edge_table.ymax - edge_table.ymin) as usize
             };
 
             for (i, edges) in edge_table.iter_between(first, last).enumerate() {
-                let y = ystart + i as i32;
+                let y = ystart + i as isize;
                 match edges.get_edges() {
                     Ok(edges) => {
                         let xrange = {
-                            let edge1 = edges[0].x.clamp(0, self.width as i32);
-                            let edge2 = edges[1].x.clamp(0, self.width as i32);
+                            let edge1 = edges[0].x.clamp(0, self.width as isize);
+                            let edge2 = edges[1].x.clamp(0, self.width as isize);
                             edge1..edge2
                         };
 
@@ -167,8 +167,8 @@ impl GraphicsWindow {
                         let zstep = {
                             let dz = edges[1].z - edges[0].z;
 
-                            let x1 = edges[0].x.clamp(0, self.width as i32);
-                            let x2 = edges[1].x.clamp(0, self.width as i32);
+                            let x1 = edges[0].x.clamp(0, self.width as isize);
+                            let x2 = edges[1].x.clamp(0, self.width as isize);
                             let dx = x2 - x1;
 
                             dz as f64 / dx as f64
@@ -197,7 +197,7 @@ impl GraphicsWindow {
             let mut y = edge_table.ymin;
             for edges in edge_table.iter() {
                 for xzpair in edges.iter() {
-                    if xzpair.x >= 0 && xzpair.x < self.width as i32 {
+                    if xzpair.x >= 0 && xzpair.x < self.width as isize {
                         self.draw_pixel(xzpair.x as u32, y as u32, &Colour::from([255, 0, 0, 255]));
                     }
                 }
