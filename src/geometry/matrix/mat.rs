@@ -74,11 +74,12 @@ where
     /// # Arguments
     /// * f - A closure which will be called on each coordinate.
     ///
-    pub fn map<F>(&self, f: F) -> Matrix<T, R, C>
+    pub fn map<U, F>(&self, mut f: F) -> Matrix<U, R, C>
     where
-        F: Fn(T) -> T,
+        U: MatrixElement<U>,
+        F: FnMut(T) -> U,
     {
-        Matrix(self.0.map(|row| row.map(&f)))
+        Matrix(self.0.map(|row| row.map(&mut f)))
     }
 
     /// Apply the closure f to each of a point's coordinates.
@@ -135,6 +136,75 @@ impl<T, const R: usize, const C: usize> From<[[T; C]; R]> for Matrix<T, R, C> {
         Matrix(array.map(|row| row.map(|i| i)))
     }
 }
+
+/// Conversion between primitive types.
+///
+macro_rules! prim_convert_impl {
+    ($($from_t:ty),+ => $into_t:ty) => {$(
+        impl<const R: usize, const C: usize> From<Matrix<$from_t, R, C>> for Matrix<$into_t, R, C>
+        where
+            $from_t: MatrixElement<$from_t>,
+            $into_t: MatrixElement<$into_t>,
+        {
+            fn from(matrix: Matrix<$from_t, R, C>) -> Self {
+                matrix.map(|i| i.into())
+            }
+        })+
+    };
+}
+
+prim_convert_impl! {i8, u8 => i16}
+prim_convert_impl! {i8, u8, i16, u16 => i32}
+prim_convert_impl! {i8, u8, i16, u16, i32, u32 => i64}
+prim_convert_impl! {i8, u8, i16, u16, i32, u32, i64, u64 => i128}
+prim_convert_impl! {i8, u8, i16 => isize}
+
+prim_convert_impl! {u8 => u16}
+prim_convert_impl! {u8, u16 => u32}
+prim_convert_impl! {u8, u16, u32 => u64}
+prim_convert_impl! {u8, u16, u32, u64 => u128}
+prim_convert_impl! {u8, u16 => usize}
+
+prim_convert_impl! {i8, u8, i16, u16 => f32}
+prim_convert_impl! {i8, u8, i16, u16, i32, u32, f32 => f64}
+
+macro_rules! prim_try_convert_impl {
+    ($($from_t:ty),+ => $into_t:ty) => {$(
+        impl<const R: usize, const C: usize> TryFrom<Matrix<$from_t, R, C>> for Matrix<$into_t, R, C>
+        where
+            $from_t: MatrixElement<$from_t>,
+            $into_t: MatrixElement<$into_t>,
+        {
+            type Error = std::num::TryFromIntError;
+
+            fn try_from(matrix: Matrix<$from_t, R, C>) -> Result<Self, Self::Error> {
+                let mut error = None;
+                let new_matrix = matrix.map(|i| {
+                    i.try_into().unwrap_or_else(|e| {
+                        error = Some(e);
+                        Default::default()
+                    })
+                });
+
+                error.map_or(Ok(new_matrix), Err)
+            }
+        })+
+    };
+}
+
+prim_try_convert_impl! {u8, i16, u16, i32, u32, i64, u64, i128, u128, isize, usize => i8}
+prim_try_convert_impl! {u16, i32, u32, i64, u64, i128, u128, isize, usize => i16}
+prim_try_convert_impl! {u16, i32, u32, i64, u64, i128, u128, usize => isize}
+prim_try_convert_impl! {u32, i64, u64, i128, u128, isize, usize => i32}
+prim_try_convert_impl! {u64, i128, u128, isize, usize => i64}
+prim_try_convert_impl! {u128, isize, usize => i128}
+
+prim_try_convert_impl! {i8, i16, u16, i32, u32, i64, u64, i128, u128, isize, usize => u8}
+prim_try_convert_impl! {i8, i16, i32, u32, i64, u64, i128, u128, isize, usize => u16}
+prim_try_convert_impl! {i8, i16, i32, u32, i64, u64, i128, u128, isize => usize}
+prim_try_convert_impl! {i8, i16, i32, i64, u64, i128, u128, isize, usize => u32}
+prim_try_convert_impl! {i8, i16, i32, i64, i128, u128, isize, usize => u64}
+prim_try_convert_impl! {i8, i16, i32, i64, i128, isize, usize => u128}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Operator Overloads //////////////////////////////////////////////////////////
