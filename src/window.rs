@@ -3,10 +3,10 @@ use pixels::{Pixels, SurfaceTexture};
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
-    window::{Window, WindowBuilder},
+    window::{Window, WindowBuilder}, platform::unix::WindowBuilderExtUnix,
 };
 
-use crate::{geometry::Scalar, mesh::Transform, rasterizer::EdgeTable};
+use crate::{buffer::PixelBuffer, geometry::Scalar, mesh::Transform};
 
 pub struct Colour(pub [u8; 4]);
 
@@ -20,13 +20,6 @@ impl<'a> Colour {
     pub fn as_slice(&'a self) -> &'a [u8] {
         &self.0
     }
-}
-
-#[derive(PartialEq)]
-pub enum DrawType {
-    Wireframe,
-    Fill,
-    Both,
 }
 
 pub struct GraphicsWindow {
@@ -54,6 +47,7 @@ impl GraphicsWindow {
                 .with_title("3D Graphics")
                 .with_inner_size(size)
                 .with_min_inner_size(size)
+                .with_decorations(true)
                 .build(event_loop)
                 .unwrap()
         };
@@ -62,13 +56,16 @@ impl GraphicsWindow {
         let pixel_buffer = {
             let surface_texture = SurfaceTexture::new(width, height, &window);
 
-            Pixels::new(width, height, surface_texture).expect("Error: create pixel buffer")
+            match Pixels::new(width, height, surface_texture) {
+                Ok(result) => result,
+                Err(error) => panic!("Failed to create pixel buffer: {}", error),
+            }
         };
 
         let zbuffer = vec![vec![0.0; (width + 1) as usize]; (height + 1) as usize];
 
         // Create the transformation matrix to project camera space onto NDC space
-        let near_plane = 10.0;
+        let near_plane = 1.0;
         let far_plane = 1000.0;
         let fov = 45.0;
 
@@ -134,76 +131,10 @@ impl GraphicsWindow {
         }
     }
 
-    ///
-    /// Draw a polygon using rasterization.
-    ///
-    pub fn draw_polygon(&mut self, edge_table: &EdgeTable, style: DrawType, colour: &Colour) {
-        // Draw a rasterized polygon
-        if style == DrawType::Fill || style == DrawType::Both {
-            // Find the first and last elements we want to iterate between in the edge table.
-            // We only want elements that will be within screen space.
-            let (first, ystart) = if edge_table.ymin < 0 {
-                (edge_table.ymin.abs() as usize, 0)
-            } else {
-                (0, edge_table.ymin)
-            };
-            let last = if edge_table.ymax > self.height as isize {
-                (self.height as isize - edge_table.ymin) as usize
-            } else {
-                (edge_table.ymax - edge_table.ymin) as usize
-            };
-
-            for (i, edges) in edge_table.iter_between(first, last).enumerate() {
-                let y = ystart + i as isize;
-                match edges.get_edges() {
-                    Ok(edges) => {
-                        let xrange = {
-                            let edge1 = edges[0].x.clamp(0, self.width as isize);
-                            let edge2 = edges[1].x.clamp(0, self.width as isize);
-                            edge1..edge2
-                        };
-
-                        // Find out how much Z changes for each X
-                        let zstep = {
-                            let dz = edges[1].z - edges[0].z;
-
-                            let x1 = edges[0].x.clamp(0, self.width as isize);
-                            let x2 = edges[1].x.clamp(0, self.width as isize);
-                            let dx = x2 - x1;
-
-                            dz as f64 / dx as f64
-                        };
-                        let mut z = edges[0].z as f64;
-
-                        // interpolate X between the 2 edges.
-                        for x in xrange {
-                            if z > self.zbuffer[y as usize][x as usize] {
-                                self.draw_pixel(x as u32, y as u32, colour);
-                                self.zbuffer[y as usize][x as usize] = z;
-                            }
-
-                            z += zstep;
-                        }
-                    }
-                    Err(_error) => {
-                        println!("No edges for Y coordinate {}", y);
-                    }
-                };
-            }
-        }
-
-        // Draw a wireframe polygon
-        if style == DrawType::Wireframe || style == DrawType::Both {
-            let mut y = edge_table.ymin;
-            for edges in edge_table.iter() {
-                for xzpair in edges.iter() {
-                    if xzpair.x >= 0 && xzpair.x < self.width as isize {
-                        self.draw_pixel(xzpair.x as u32, y as u32, &Colour::from([255, 0, 0, 255]));
-                    }
-                }
-                y += 1;
-            }
-        }
+    pub fn draw_buffer(&mut self, pixel_buffer: PixelBuffer) {
+        self.pixel_buffer
+            .get_frame()
+            .clone_from_slice(pixel_buffer.get_data());
     }
 
     ///

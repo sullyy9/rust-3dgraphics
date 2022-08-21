@@ -1,3 +1,4 @@
+mod buffer;
 mod camera;
 mod geometry;
 mod mesh;
@@ -16,11 +17,12 @@ use winit::{
 };
 
 use crate::{
+    buffer::{Color, PixelBuffer, ZBuffer},
     camera::Camera,
     geometry::{BBox, Degrees, Dim, Point, RotationAxis, Scalar, Vector},
     mesh::{Mesh, Pipeline, Renderable, Transform, Visibility},
-    rasterizer::EdgeTable,
-    window::{Colour, DrawType, GraphicsWindow},
+    rasterizer::Rasterize,
+    window::GraphicsWindow,
     world_object::WorldObject,
 };
 
@@ -42,6 +44,9 @@ struct CameraControls {
 }
 
 fn main() -> ! {
+    // std::env::set_var("RUST_BACKTRACE", "full");
+    std::env::set_var("WGPU_BACKEND", "gl");
+
     // Create the window
     let event_loop = EventLoop::new();
     let mut window = GraphicsWindow::new(960, 720, &event_loop);
@@ -49,7 +54,7 @@ fn main() -> ! {
 
     //let cube = Mesh::new_cube(100.0);
     let mut teapot = WorldObject::new(Mesh::new(Path::new("./resources/teapot.obj")));
-    teapot.position = Point::new([0.0, 0.0, 400.0]);
+    teapot.position = Point::new([0.0, 0.0, 100.0]);
 
     let mut camera = Camera::new(Point::new([0.0, 0.0, 0.0]));
     let mut controls = CameraControls::default();
@@ -194,11 +199,14 @@ fn main() -> ! {
                     .translate_y(1.0)
                     .scale_x(Scalar::from(window.width as f64 / 2.0))
                     .scale_y(Scalar::from(window.height as f64 / 2.0))
-                    .scale_z(Scalar::from(-1000.0))
-                    .translate_z(1000.0)
+                    .scale_z(Scalar::from(10000.0))
+                    .translate_z(10000.0)
                     .build_affine();
 
-                let ndc_bounds = BBox::new(Point::new([-1.0, -1.0, -1.0, -1.0]), Point::new([1.0, 1.0, 1.0, 1.0]));
+                let ndc_bounds = BBox::new(
+                    Point::new([-1.0, -1.0, -1.0, -1.0]),
+                    Point::new([1.0, 1.0, 1.0, 1.0]),
+                );
 
                 let screen_mesh = teapot
                     .mesh
@@ -216,16 +224,21 @@ fn main() -> ! {
                     _ => true,
                 });
 
-                visible_polygons.for_each(|polygon| {
-                    let colour = if let Some(normal) = polygon.normal {
-                        let intensity = ((-normal[Dim::Z] + 1.0) * 127.0) as u8;
-                        Colour([0, intensity, 0, u8::max_value()])
-                    } else {
-                        Colour([u8::max_value(), 0, 0, u8::max_value()])
-                    };
+                let mut pixel_buffer =
+                    PixelBuffer::new(window.width as usize, window.height as usize);
+                let mut zbuffer = ZBuffer::new(window.width as usize, window.height as usize);
 
-                    window.draw_polygon(&EdgeTable::from(polygon), DrawType::Fill, &colour);
+                visible_polygons.for_each(|polygon| {
+                    let color = if let Some(normal) = polygon.normal {
+                        let intensity = ((-normal[Dim::Z] + 1.0) * 127.0) as u8;
+                        Color([0, intensity, 0, u8::max_value()])
+                    } else {
+                        Color([u8::max_value(), 0, 0, u8::max_value()])
+                    };
+                    polygon.rasterize(&mut pixel_buffer, &mut zbuffer, &color);
                 });
+
+                window.draw_buffer(pixel_buffer);
 
                 // Render the screen buffer.
                 window.render();
