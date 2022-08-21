@@ -49,7 +49,7 @@ impl Renderable for Mesh {
         let vertex = self
             .vertex
             .iter()
-            .map(|vertex| Point::new([vertex[Dim::X], vertex[Dim::Y], vertex[Dim::Z], 1.0]))
+            .map(|vertex| vertex.to_homogenous())
             .collect();
         PipeMesh {
             vertex,

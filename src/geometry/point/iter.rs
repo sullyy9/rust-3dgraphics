@@ -37,9 +37,10 @@ where
     /// * f - A closure which will be called on each coordinate.
     ///
     #[allow(dead_code)]
-    pub fn map<F>(&self, f: F) -> Point<T, D>
+    pub fn map<U, F>(&self, f: F) -> Point<U, D>
     where
-        F: Fn(T) -> T,
+        U: MatrixElement<U>,
+        F: FnMut(T) -> U,
     {
         Point(self.0.map(f))
     }

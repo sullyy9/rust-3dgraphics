@@ -33,9 +33,10 @@ where
 
     /// Return a new vector where each coordinate has been modified acording to the closure f.
     ///
-    pub fn map<F>(&self, f: F) -> Vector<T, D>
+    pub fn map<U, F>(&self, f: F) -> Vector<U, D>
     where
-        F: Fn(T) -> T,
+        U: MatrixElement<U>,
+        F: FnMut(T) -> U,
     {
         Vector(self.0.map(f))
     }

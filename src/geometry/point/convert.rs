@@ -1,6 +1,8 @@
 //! Implementations of traits and methods for point type conversion.
 //!
 
+use crate::geometry::Dim;
+
 use super::{Matrix, MatrixElement, Point};
 
 /// Point -> Point
@@ -22,27 +24,23 @@ where
     }
 }
 
-impl<T, const D: usize> Point<T, D>
+impl<T> Point<T, 3>
 where
-    T: MatrixElement<T>,
+    T: MatrixElement<T> + From<u8>,
 {
-    /// Promote a point to a higher dimentional point where the additional dimensions are
-    /// initialised as 0.
-    ///
-    pub fn promote<const ND: usize>(&self) -> Point<T, ND> {
-        let mut new_point = Point::default();
-        let len = self.0[0].len();
-        new_point.0[0][..len].clone_from_slice(&self.0[0]);
-        new_point
+    pub fn to_homogenous(self) -> Point<T, 4> {
+        use Dim::{X, Y, Z};
+
+        Point::new([self[X], self[Y], self[Z], 1.into()])
     }
 
-    /// Demote a point to a lower dimentional point.
-    ///
-    pub fn demote<const ND: usize>(&self) -> Point<T, ND> {
-        let mut new_point = Point::default();
-        let len = new_point.0[0].len();
-        new_point.0[0].clone_from_slice(&self.0[0][..len]);
-        new_point
+    pub fn from_homogenous(point: Point<T, 4>) -> Self {
+        use Dim::{W, X, Y, Z};
+
+        let x = point[X] / point[W];
+        let y = point[Y] / point[W];
+        let z = point[Z] / point[W];
+        Self::new([x, y, z])
     }
 }
 
