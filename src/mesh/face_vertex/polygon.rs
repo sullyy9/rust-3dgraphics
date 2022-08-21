@@ -24,6 +24,10 @@ impl Polygonal for Polygon<'_> {
     }
 
     fn normal(&self) -> Vector<f64, 3> {
-        todo!()
+        if let Some(normal) = self.normal {
+            *normal
+        } else {
+            Vector::new([0.0, 0.0, 0.0])
+        }
     }
 }
